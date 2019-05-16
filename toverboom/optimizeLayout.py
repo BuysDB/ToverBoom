@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import itertools
 
 def swap(indexA,indexB, listToSwap):
     return [
@@ -66,8 +67,9 @@ def optimize_layout(
                         ax.clear()
                     didSwap=True
                     curScore, intersectingClones = lg.optimizeGraph( graph, trellisOrder=tuple(newTrellisOrder), plot=plot, ax=ax, **plotArgs)
-                    ax.set_title(f'{curScore} iter:{totalSwaps}' )
+
                     if plot:
+                        ax.set_title(f'{curScore} iter:{totalSwaps}' )
                         fig.canvas.draw()
                     #plt.pause(0.001)
                     break
@@ -87,8 +89,9 @@ def optimize_layout(
                         ax.clear()
                     didSwap=True
                     curScore, intersectingClones = lg.optimizeGraph( graph, trellisOrder=tuple(newTrellisOrder), plot=plot, ax=ax, **plotArgs)
-                    ax.set_title(f'{curScore} iter:{totalSwaps}' )
+
                     if plot:
+                        ax.set_title(f'{curScore} iter:{totalSwaps}' )
                         fig.canvas.draw()
                     #plt.pause(0.001)
                     break
@@ -106,8 +109,9 @@ def optimize_layout(
                         ax.clear()
                     didSwap=True
                     curScore, intersectingClones = lg.optimizeGraph( graph, trellisOrder=tuple(newTrellisOrder), plot=plot, ax=ax, **plotArgs)
-                    ax.set_title(f'{curScore} iter:{totalSwaps}' )
+
                     if plot:
+                        ax.set_title(f'{curScore} iter:{totalSwaps}' )
                         fig.canvas.draw()
                     #plt.pause(0.001)
                     break
