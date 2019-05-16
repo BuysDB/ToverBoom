@@ -1,7 +1,7 @@
 # Toverboom
 
 projects/toverboom
-<img alt="Tree plus jawbreaker" src="http://buysdb.nl/projects/toverboom/toverboom.jpg">
+<img alt="Tree plus jawbreaker" src="http://buysdb.nl/projects/toverboom/toverboom.png">
 
 ## Functionality
 
