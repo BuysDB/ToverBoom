@@ -1,19 +1,19 @@
 # Toverboom
 
-projects/toverboom
 <img alt="Tree plus jawbreaker" src="http://buysdb.nl/projects/toverboom/toverboom.png">
 
 ## Functionality
 
-[todo]
+Plot cells on a lineage tree with a time axis.
+
 ### Prerequisites
-
-
-[todo]
+networkx
+matplotlib
+numpy
 
 ### Installation
 ```
 pip3 install https://github.com/BuysDB/ToverBoom/archive/master.zip
 ```
 ### Examples
-[todo]
+see notebooks folder
