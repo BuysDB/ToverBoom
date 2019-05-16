@@ -298,7 +298,7 @@ class LineageGraph():
 
         return((x0,y0),(x1,y1))
 
-    def getSegmentOutline(self, source, sink, **kwargs):
+    def getSegmentOutline(self, source, sink, wavyness,**kwargs):
                   #Interpolate the bezier curve:
 
         graph = self.getGraph(kwargs.get('graph'))
