@@ -1,0 +1,250 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key attr.name="distance" attr.type="double" for="edge" id="d7" />
+  <key attr.name="desc" attr.type="string" for="edge" id="d6" />
+  <key attr.name="id" attr.type="string" for="edge" id="d5" />
+  <key attr.name="distance" attr.type="long" for="edge" id="d4" />
+  <key attr.name="leaf" attr.type="boolean" for="node" id="d3" />
+  <key attr.name="extinct" attr.type="boolean" for="node" id="d2" />
+  <key attr.name="ratio" attr.type="double" for="node" id="d1" />
+  <key attr.name="name" attr.type="string" for="graph" id="d0" />
+  <graph edgedefault="directed">
+    <data key="d0">()</data>
+    <node id="(0, -5)">
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(0, 0)">
+      <data key="d2">True</data>
+      <data key="d3">True</data>
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(1, 10)">
+      <data key="d2">True</data>
+      <data key="d3">True</data>
+      <data key="d1">0.1956521739130435</data>
+    </node>
+    <node id="(2, 10)">
+      <data key="d1">0.6086956521739131</data>
+    </node>
+    <node id="(4, 10)">
+      <data key="d2">True</data>
+      <data key="d3">True</data>
+      <data key="d1">0.13043478260869565</data>
+    </node>
+    <node id="(8, 10)">
+      <data key="d1">0.021739130434782608</data>
+    </node>
+    <node id="(12, 10)">
+      <data key="d1">0.021739130434782608</data>
+    </node>
+    <node id="(19, 10)">
+      <data key="d2">True</data>
+      <data key="d3">True</data>
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(2, 22)">
+      <data key="d1">0.09803921568627451</data>
+    </node>
+    <node id="(3, 22)">
+      <data key="d1">0.6274509803921569</data>
+    </node>
+    <node id="(5, 22)">
+      <data key="d1">0.1568627450980392</data>
+    </node>
+    <node id="(17, 22)">
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(30, 22)">
+      <data key="d2">True</data>
+      <data key="d3">True</data>
+      <data key="d1">0.058823529411764705</data>
+    </node>
+    <node id="(8, 22)">
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(35, 22)">
+      <data key="d2">True</data>
+      <data key="d3">True</data>
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(12, 22)">
+      <data key="d2">True</data>
+      <data key="d3">True</data>
+      <data key="d1">0.0196078431372549</data>
+    </node>
+    <node id="(2, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.037037037037037035</data>
+    </node>
+    <node id="(9, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.007407407407407408</data>
+    </node>
+    <node id="(36, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(3, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.6938271604938272</data>
+    </node>
+    <node id="(20, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.012345679012345678</data>
+    </node>
+    <node id="(23, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(29, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(34, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(5, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.2123456790123457</data>
+    </node>
+    <node id="(24, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(17, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.0</data>
+    </node>
+    <node id="(8, 25)">
+      <data key="d3">True</data>
+      <data key="d1">0.0024691358024691358</data>
+    </node>
+    <edge source="(0, -5)" target="(0, 0)">
+      <data key="d4">0</data>
+      <data key="d5">0</data>
+    </edge>
+    <edge source="(0, 0)" target="(1, 10)">
+      <data key="d6">chr8 loss, chr9 gain</data>
+      <data key="d7">2.0</data>
+      <data key="d5">11</data>
+    </edge>
+    <edge source="(0, 0)" target="(2, 10)">
+      <data key="d6">chr18_A loss, chr9 loss</data>
+      <data key="d7">2.0</data>
+      <data key="d5">12</data>
+    </edge>
+    <edge source="(0, 0)" target="(4, 10)">
+      <data key="d6">chr9 gain</data>
+      <data key="d7">1.0</data>
+      <data key="d5">14</data>
+    </edge>
+    <edge source="(0, 0)" target="(8, 10)">
+      <data key="d6">chr12 loss, chr13 gain, chr9 gain</data>
+      <data key="d7">3.0</data>
+      <data key="d5">16</data>
+    </edge>
+    <edge source="(0, 0)" target="(12, 10)">
+      <data key="d6">chr9 gain</data>
+      <data key="d7">1.0</data>
+      <data key="d5">18</data>
+    </edge>
+    <edge source="(1, 10)" target="(19, 10)">
+      <data key="d6">chr17 gain, chr22 gain</data>
+      <data key="d7">11.99</data>
+      <data key="d5">24</data>
+    </edge>
+    <edge source="(2, 10)" target="(2, 22)">
+      <data key="d4">0</data>
+      <data key="d5">26</data>
+    </edge>
+    <edge source="(2, 10)" target="(3, 22)">
+      <data key="d6">chr4_A loss</data>
+      <data key="d7">0.99</data>
+      <data key="d5">27</data>
+    </edge>
+    <edge source="(2, 10)" target="(5, 22)">
+      <data key="d6">chr4_B loss</data>
+      <data key="d7">0.99</data>
+      <data key="d5">28</data>
+    </edge>
+    <edge source="(2, 10)" target="(17, 22)">
+      <data key="d6">chr22 loss, chr4_A loss</data>
+      <data key="d7">1.99</data>
+      <data key="d5">30</data>
+    </edge>
+    <edge source="(2, 10)" target="(30, 22)">
+      <data key="d6">chr9 gain</data>
+      <data key="d7">0.99</data>
+      <data key="d5">35</data>
+    </edge>
+    <edge source="(8, 10)" target="(8, 22)">
+      <data key="d4">0</data>
+      <data key="d5">56</data>
+    </edge>
+    <edge source="(8, 10)" target="(35, 22)">
+      <data key="d6">chr10 loss, chr9 loss</data>
+      <data key="d7">1.99</data>
+      <data key="d5">59</data>
+    </edge>
+    <edge source="(12, 10)" target="(12, 22)">
+      <data key="d4">0</data>
+      <data key="d5">66</data>
+    </edge>
+    <edge source="(2, 22)" target="(2, 25)">
+      <data key="d4">0</data>
+      <data key="d5">97</data>
+    </edge>
+    <edge source="(2, 22)" target="(9, 25)">
+      <data key="d6">chr20 gain</data>
+      <data key="d7">0.978</data>
+      <data key="d5">100</data>
+    </edge>
+    <edge source="(2, 22)" target="(36, 25)">
+      <data key="d6">chr21 loss</data>
+      <data key="d7">0.978</data>
+      <data key="d5">108</data>
+    </edge>
+    <edge source="(3, 22)" target="(3, 25)">
+      <data key="d4">0</data>
+      <data key="d5">38</data>
+    </edge>
+    <edge source="(3, 22)" target="(20, 25)">
+      <data key="d6">chr16 loss</data>
+      <data key="d7">0.978</data>
+      <data key="d5">40</data>
+    </edge>
+    <edge source="(3, 22)" target="(23, 25)">
+      <data key="d6">chr15 loss</data>
+      <data key="d7">0.978</data>
+      <data key="d5">41</data>
+    </edge>
+    <edge source="(3, 22)" target="(29, 25)">
+      <data key="d6">chr19 loss</data>
+      <data key="d7">0.978</data>
+      <data key="d5">42</data>
+    </edge>
+    <edge source="(3, 22)" target="(34, 25)">
+      <data key="d6">chr9 gain</data>
+      <data key="d7">0.978</data>
+      <data key="d5">43</data>
+    </edge>
+    <edge source="(5, 22)" target="(5, 25)">
+      <data key="d4">0</data>
+      <data key="d5">54</data>
+    </edge>
+    <edge source="(5, 22)" target="(24, 25)">
+      <data key="d6">chr14 loss</data>
+      <data key="d7">0.978</data>
+      <data key="d5">55</data>
+    </edge>
+    <edge source="(17, 22)" target="(17, 25)">
+      <data key="d4">0</data>
+      <data key="d5">109</data>
+    </edge>
+    <edge source="(8, 22)" target="(8, 25)">
+      <data key="d4">0</data>
+      <data key="d5">132</data>
+    </edge>
+  </graph>
+</graphml>
