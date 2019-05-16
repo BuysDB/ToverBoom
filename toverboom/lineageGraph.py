@@ -30,9 +30,8 @@ def interpolateBezierAngle(points, t, ds=0.001):
 
 class LineageGraph():
 
-    def __init__(self):
-        pass
-        self.graph = None
+    def __init__(self, graph=None):
+        self.graph = graph
         self.radiusAttribute = None
         self.defaultRadius=None
         self.xDistance=1
