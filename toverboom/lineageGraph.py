@@ -148,7 +148,7 @@ class LineageGraph():
         radiusAttribute = self.getRadiusAttribute(kwargs.get('radiusAttribute'))
         radiusMultiplier = self.getRadiusMultiplier(kwargs.get('radiusMultiplier'))
         defaultRadius = self.getDefaultRadius(kwargs.get('defaultRadius'))
-        if not node in graph:
+
         return max(minRadius, graph.node[node].get(radiusAttribute, defaultRadius)*radiusMultiplier )
 
     """Obtain the two radii for an edge from source to sink"""
@@ -729,6 +729,7 @@ class LineageGraph():
         return fig, ax
 
     def plotSingleCells(
+            self,
             cellData,
             ax = None,
             fig =None,
@@ -741,6 +742,7 @@ class LineageGraph():
             wavyness = 0.4,
             defaultCellColor = 'k',
             defaultCellSize = 20,
+            cellJitter=10,
             defaultCellMarker = 'o'):
         if ax is None:
             fig, ax = self.getEmptyPlot()
@@ -804,11 +806,11 @@ class LineageGraph():
 
                 ax.scatter([cell_x],[cell_y],c=[c],s=[s], marker=m, zorder=8)
 
-    self.plotEdges(ax, bezier=True,wavyness=wavyness,stepCount=30,plotArgs={'lw':0}, offsetCentroid=True)
-    self.plotPatches(ax=ax,wavyness=wavyness)
+        self.plotEdges(ax, bezier=True,wavyness=wavyness,stepCount=30,plotArgs={'lw':0}, offsetCentroid=True)
+        self.plotPatches(ax=ax,wavyness=wavyness)
 
-    # Remove plot spines:
-    despine(ax)
-    # Scale labels to plot size:
-    format_x_axis_labels(ax)
-    fig.canvas.draw()
+        # Remove plot spines:
+        despine(ax)
+        # Scale labels to plot size:
+        format_x_axis_labels(ax)
+        fig.canvas.draw()
