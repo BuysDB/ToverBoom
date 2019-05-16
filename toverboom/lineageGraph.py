@@ -512,10 +512,7 @@ class LineageGraph():
             raise ValueError('Wavyness and stepCount are required')
 
         controlPoints = self.getEdgeInternalControlPoints(x0,y0, x1, y1, **kwargs)
-        print(controlPoints)
-        print(stepCount)
         interpolatedBezier = interpolateBezier( points=controlPoints, steps=stepCount)
-        print(interpolatedBezier)
         return [
             (bx,by)
             for bi,(bx,by) in enumerate(interpolatedBezier)
