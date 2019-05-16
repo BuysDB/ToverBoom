@@ -36,7 +36,7 @@ def format_x_axis_labels(ax, divider=10):
         return str(int(x/divider))
     formatter = FuncFormatter(d)
     ax.xaxis.set_major_formatter(formatter)
-    
+
 
 """ Remove spines from axis """
 def despine(ax):
@@ -148,6 +148,7 @@ class LineageGraph():
         radiusAttribute = self.getRadiusAttribute(kwargs.get('radiusAttribute'))
         radiusMultiplier = self.getRadiusMultiplier(kwargs.get('radiusMultiplier'))
         defaultRadius = self.getDefaultRadius(kwargs.get('defaultRadius'))
+        if not node in graph:
         return max(minRadius, graph.node[node].get(radiusAttribute, defaultRadius)*radiusMultiplier )
 
     """Obtain the two radii for an edge from source to sink"""
@@ -721,3 +722,93 @@ class LineageGraph():
 
             ax.add_patch( plt.Polygon( self.getSegmentOutline( source, sink , wavyness=wavyness,stepCount=stepCount ) ,
                                       facecolor=facecolor, lw=lw, edgecolor=edgecolor  ) )
+
+
+    def getEmptyPlot(self):
+        fig, ax = plt.subplots()
+        return fig, ax
+
+    def plotSingleCells(
+            cellData,
+            ax = None,
+            fig =None,
+            cloneAttribute = 'cluster',
+            timeAttribute = 'tp',
+            colorAttribute = 'color',
+            labelAttribute = 'label',
+            markerAttribute= 'marker',
+            sizeAttribute = 'size',
+            wavyness = 0.4,
+            defaultCellColor = 'k',
+            defaultCellSize = 20,
+            defaultCellMarker = 'o'):
+        if ax is None:
+            fig, ax = self.getEmptyPlot()
+
+
+        for clone, tp in self.graph.nodes:
+            node = (clone, tp)
+            isLeaf = (self.graph.out_degree(node)==0)
+
+            # Dataframe with all cells which are present at this timepoint and clone
+            cellsToDraw = cellData[
+                    (cellData[cloneAttribute]==clone) &
+                    ( cellData[timeAttribute]==tp)
+            ]
+            radius = self.getNodeRadius(node=node)
+
+            x = []
+            y = []
+            color = []
+            marker = []
+            size = []
+            annotation = []
+
+
+            for cellIndex, metaData in cellsToDraw.iterrows():
+
+                # Cell position calculation
+                nx,ny = self.getNodeCoordinates()[node]
+                if isLeaf:
+                    low = -cellJitter*1.5
+                    high = 0
+                else:
+                    low = -cellJitter
+                    high = cellJitter
+                cell_x = np.random.uniform(low=low,high=high) + nx
+                cell_y = np.random.uniform(low=-radius,high=radius) + ny
+                x.append(cell_x)
+                y.append(cell_y)
+
+                # Cell color:
+                try:
+                    c = metaData[colorAttribute]
+                except Exception as e:
+                    c = defaultCellColor
+                color.append(c)
+
+                # Cell Marker:
+                try:
+                    m = metaData[markerAttribute]
+                except Exception as e:
+                    m = defaultCellMarker
+                marker.append(m)
+
+                # Cell marker size
+                try:
+                    s = metaData[sizeAttribute]
+                except Exception as e:
+                    s = defaultCellSize
+                size.append(s)
+
+
+                ax.scatter([cell_x],[cell_y],c=[c],s=[s], marker=m, zorder=8)
+
+    self.plotEdges(ax, bezier=True,wavyness=wavyness,stepCount=30,plotArgs={'lw':0}, offsetCentroid=True)
+    self.plotPatches(ax=ax,wavyness=wavyness)
+
+    # Remove plot spines:
+    despine(ax)
+    # Scale labels to plot size:
+    format_x_axis_labels(ax)
+    fig.canvas.draw()
