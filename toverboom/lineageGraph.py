@@ -253,7 +253,7 @@ class LineageGraph():
             else:
                 ax.plot([x0,x1],[y0,y1],**plotArgs)
 
-    def getSegmentWidthControlPoints(self, r0,r1,**kwargs):
+    def getSegmentWidthControlPoints(self, r0,r1, source, sink, **kwargs):
         #@todo: this ignores the distance between the points!
         radiusAttribute= self.getRadiusAttribute(kwargs.get('radiusAttribute'))
         radiusMultiplier = self.getRadiusMultiplier(kwargs.get('radiusMultiplier'))
@@ -319,7 +319,7 @@ class LineageGraph():
 
         # The width of the curve is described by a beziercurve too (single dimension cubic)
         if widthControlPoints is None:
-            widthControlPoints = self.getSegmentWidthControlPoints(r0,r1,**kwargs)
+            widthControlPoints = self.getSegmentWidthControlPoints(r0,r1,source,sink,**kwargs)
 
         pathForward  =[]
         pathReverse = []
@@ -362,7 +362,7 @@ class LineageGraph():
 
         # The width of the curve is described by a beziercurve too (single dimension cubic)
         if widthControlPoints is None:
-            widthControlPoints = self.getSegmentWidthControlPoints(r0,r1,**kwargs)
+            widthControlPoints = self.getSegmentWidthControlPoints(r0,r1,source,sink,**kwargs)
 
         pathForward  =[]
         pathReverse = []
@@ -415,7 +415,7 @@ class LineageGraph():
 
         # The width of the curve is described by a beziercurve too (single dimension cubic)
         if widthControlPoints is None:
-            widthControlPoints = self.getSegmentWidthControlPoints(r0,r1,**kwargs)
+            widthControlPoints = self.getSegmentWidthControlPoints(r0,r1,source,sink,**kwargs)
 
         pathForward  =[]
         pathReverse = []
@@ -698,7 +698,8 @@ class LineageGraph():
             if label is not None:
                 ax.text( x+0.5, y, label, verticalalignment='center',horizontalalignment='left', **plotArgs)
 
-    def drawPatches(self, ax,facecolor=(0.7,0.7,0.7,1),stepCount=30,lw=0.0, edgecolor='b',wavyness=0.8 ):
+    def plotPatches(self, ax,facecolor=(0.7,0.7,0.7,1),stepCount=30,lw=0.0, edgecolor='b',wavyness=0.8 ):
         for source, sink in self.graph.edges():
+
             ax.add_patch( plt.Polygon( self.getSegmentOutline( source, sink , wavyness=wavyness,stepCount=stepCount ) ,
                                       facecolor=facecolor, lw=lw, edgecolor=edgecolor  ) )
