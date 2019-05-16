@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import numpy as np
 
 # Obtained from: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
 def on_segment(p, q, r):
