@@ -1,8 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from toverboom.intersections import *
+import numpy as np
 import functools
+import matplotlib.pyplot as plt
+
 @functools.lru_cache(1024)
+
+
+def interpolateBezier( points, steps=10, t=None):
+    if len(points)==3:
+        mapper = lambda t,p: (1-t)**2 * p[0] + 2*(1-t)*t*p[1] + t**2*p[2]
+    elif len(points)==4:
+        mapper = lambda t,p: (np.power( (1-t),3)*p[0] +\
+         3* np.power((1-t),2) *t *p[1] +\
+         3*(1-t)*np.power(t,2)*p[2] +\
+         np.power(t,3)*p[3])
+
+    if t is not None:
+        return   mapper(t, [q[0] for q in points]), mapper(t, [q[1] for q in points])
+    xGen = ( mapper(t, [q[0] for q in points]) for t in np.linspace(0, 1, steps) )
+    yGen = ( mapper(t, [q[1] for q in points]) for t in np.linspace(0, 1, steps) )
+
+    return zip(xGen, yGen)
+
+def interpolateBezierAngle(points, t, ds=0.001):
+    x0, y0 = interpolateBezier(points, t=t-ds)
+    x1, y1 = interpolateBezier(points, t=t+ds)
+    return np.arctan2( y1-y0, x0-x1)
+
 class LineageGraph():
 
     def __init__(self):
@@ -305,8 +331,8 @@ class LineageGraph():
 
         for bi,(bx,by) in enumerate(self.interpolateEdge(x0,y0, x1, y1,wavyness=wavyness,stepCount=stepCount)):
             t = (bi/(stepCount-1))
-            angle = bdbplot.interpolateBezierAngle(controlPoints,t )
-            currentWidth =  bdbplot.interpolateBezier(widthControlPoints,t=t)[0]  # r0 + (r1-r0)*t
+            angle = interpolateBezierAngle(controlPoints,t )
+            currentWidth =  interpolateBezier(widthControlPoints,t=t)[0]  # r0 + (r1-r0)*t
 
             pathForward.append((bx+np.sin(angle)*currentWidth, by+np.cos(angle)*currentWidth))
             pathReverse.append((bx-np.sin(angle)*currentWidth,by-np.cos(angle)*currentWidth))
@@ -350,14 +376,14 @@ class LineageGraph():
 
         # Interpolate the center bezier curce
         xyCenter = np.array(
-            [bdbplot.interpolateBezier(t=(t-timeStart)/(timeEnd-timeStart), points=controlPoints)
+            [interpolateBezier(t=(t-timeStart)/(timeEnd-timeStart), points=controlPoints)
              for t in timeAxis])
 
         for timePoint in timeAxis:
             timeRatio = (timePoint-timeStart)/(timeEnd-timeStart) # value between 0 and 1
-            bx,by = bdbplot.interpolateBezier(t=timeRatio, points=controlPoints)
-            angle = bdbplot.interpolateBezierAngle(controlPoints,timeRatio )
-            currentWidth =  bdbplot.interpolateBezier(widthControlPoints,t=timeRatio)[0]
+            bx,by = interpolateBezier(t=timeRatio, points=controlPoints)
+            angle = interpolateBezierAngle(controlPoints,timeRatio )
+            currentWidth =  interpolateBezier(widthControlPoints,t=timeRatio)[0]
             pathForward.append((bx+np.sin(angle)*currentWidth, by+np.cos(angle)*currentWidth))
             pathReverse.append((bx-np.sin(angle)*currentWidth,by-np.cos(angle)*currentWidth))
 
@@ -408,7 +434,7 @@ class LineageGraph():
 
         # Interpolate the center bezier curce
         xyCenter = np.array(
-            [bdbplot.interpolateBezier(t=(t-timeStart)/(timeEnd-timeStart), points=controlPoints)
+            [interpolateBezier(t=(t-timeStart)/(timeEnd-timeStart), points=controlPoints)
              for t in timeAxis])
 
 
@@ -421,9 +447,9 @@ class LineageGraph():
                 continue
 
             timeRatios.append(timeRatio)
-            bx,by = bdbplot.interpolateBezier(t=timeRatio, points=controlPoints)
-            angle = bdbplot.interpolateBezierAngle(controlPoints,timeRatio )
-            currentRadius =  bdbplot.interpolateBezier(widthControlPoints,t=timeRatio)[0]
+            bx,by = interpolateBezier(t=timeRatio, points=controlPoints)
+            angle = interpolateBezierAngle(controlPoints,timeRatio )
+            currentRadius =  interpolateBezier(widthControlPoints,t=timeRatio)[0]
 
             absoluteYStartRadius = (yStart*currentRadius*2)-currentRadius
             absoluteYEndRadius = (yEnd*currentRadius*2)-currentRadius
@@ -487,7 +513,7 @@ class LineageGraph():
         controlPoints = self.getEdgeInternalControlPoints(x0,y0, x1, y1, **kwargs)
         return [
             (bx,by)
-            for bi,(bx,by) in enumerate(bdbplot.interpolateBezier( points=controlPoints, steps=stepCount))
+            for bi,(bx,by) in enumerate(interpolateBezier( points=controlPoints, steps=stepCount))
         ]
 
 
@@ -671,3 +697,8 @@ class LineageGraph():
                 label = f'{node[0]}'
             if label is not None:
                 ax.text( x+0.5, y, label, verticalalignment='center',horizontalalignment='left', **plotArgs)
+
+    def drawPatches(self, ax,facecolor=(0.7,0.7,0.7,1),stepCount=30,lw=0.0, edgecolor='b',wavyness=0.8 ):
+        for source, sink in self.graph.edges():
+            ax.add_patch( plt.Polygon( self.getSegmentOutline( source, sink , wavyness=wavyness,stepCount=stepCount ) ,
+                                      facecolor=facecolor, lw=lw, edgecolor=edgecolor  ) )
