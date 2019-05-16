@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import functools
 @functools.lru_cache(1024)
 class LineageGraph():
