@@ -728,6 +728,9 @@ class LineageGraph():
         fig, ax = plt.subplots()
         return fig, ax
 
+
+
+
     def plotSingleCells(
             self,
             cellData,
