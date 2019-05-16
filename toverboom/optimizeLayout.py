@@ -22,28 +22,28 @@ def optimize_layout(
                         visualize_progress_fig = None,
                         visualize_progress_ax = None
                     ):
-        if visualize_progress_ax is not None and visualize_progress_ax is None:
-            raise ValueError("Supply the figure")
+    if visualize_progress_ax is not None and visualize_progress_ax is None:
+        raise ValueError("Supply the figure")
 
-        if visualize_progress_ax is None:
-            plot=False
-            fig = None
-            ax = None
-        else:
-            ax = visualize_progress_ax
-            fig = visualize_progress_fig
-            plot=True
+    if visualize_progress_ax is None:
+        plot=False
+        fig = None
+        ax = None
+    else:
+        ax = visualize_progress_ax
+        fig = visualize_progress_fig
+        plot=True
 
-        # Load the topology:
-        graph = lineage_graph.graph
+    # Load the topology:
+    graph = lineage_graph.graph
 
-        # The order of the clones (trellis) is stored here:
-        trellisOrder = list(set([lineage for lineage,timepoint in lineage_graph.graph]))
+    # The order of the clones (trellis) is stored here:
+    trellisOrder = list(set([lineage for lineage,timepoint in lineage_graph.graph]))
 
-        # Obtain the score for the first trellis:
-        result = lg.optimizeGraph( graph, tuple(trellisOrder), plot=plot, ax=ax, **plotArgs)
+    # Obtain the score for the first trellis:
+    result = lg.optimizeGraph( graph, tuple(trellisOrder), plot=plot, ax=ax, **plotArgs)
 
-        curScore, intersectingClones = result
+    curScore, intersectingClones = result
 
 
     prevBest = None
