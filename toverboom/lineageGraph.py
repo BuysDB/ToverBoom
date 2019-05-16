@@ -743,6 +743,7 @@ class LineageGraph():
             defaultCellColor = 'k',
             defaultCellSize = 20,
             cellJitter=10,
+            plotPatches=False,
             defaultCellMarker = 'o'):
         if ax is None:
             fig, ax = self.getEmptyPlot()
@@ -806,8 +807,9 @@ class LineageGraph():
 
                 ax.scatter([cell_x],[cell_y],c=[c],s=[s], marker=m, zorder=8)
 
-        self.plotEdges(ax, bezier=True,wavyness=wavyness,stepCount=30,plotArgs={'lw':0}, offsetCentroid=True)
-        self.plotPatches(ax=ax,wavyness=wavyness)
+        if plotPatches:
+            self.plotEdges(ax, bezier=True,wavyness=wavyness,stepCount=30,plotArgs={'lw':0}, offsetCentroid=True)
+            self.plotPatches(ax=ax,wavyness=wavyness)
 
         # Remove plot spines:
         despine(ax)
