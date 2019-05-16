@@ -4,6 +4,7 @@ from toverboom.intersections import *
 import numpy as np
 import functools
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 
 
 def interpolateBezier( points, steps=10, t=None):
@@ -27,6 +28,22 @@ def interpolateBezierAngle(points, t, ds=0.001):
     x0, y0 = interpolateBezier(points, t=t-ds)
     x1, y1 = interpolateBezier(points, t=t+ds)
     return np.arctan2( y1-y0, x0-x1)
+
+
+
+def format_x_axis_labels(ax, divider=10):
+    def d(x, pos):
+        return str(int(x/divider))
+    formatter = FuncFormatter(d)
+    ax.xaxis.set_major_formatter(formatter)
+    
+
+""" Remove spines from axis """
+def despine(ax):
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.get_yaxis().set_visible(False)
 
 class LineageGraph():
 
