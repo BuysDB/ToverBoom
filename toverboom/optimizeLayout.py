@@ -37,13 +37,13 @@ def optimize_layout(
     # Load the topology:
     graph = lineage_graph.graph
     lg = lineage_graph
-    
+
     # The order of the clones (trellis) is stored here:
     trellisOrder = list(set([lineage for lineage,timepoint in lineage_graph.graph]))
 
     # Obtain the score for the first trellis:
     result = lg.optimizeGraph( graph, tuple(trellisOrder), plot=plot, ax=ax, **plotArgs)
-
+    best = trellisOrder
     curScore, intersectingClones = result
 
 
