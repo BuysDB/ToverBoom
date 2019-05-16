@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from intersections import *
+from toverboom.intersections import *
 import functools
 @functools.lru_cache(1024)
 class LineageGraph():
