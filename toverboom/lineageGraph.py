@@ -5,10 +5,9 @@ import numpy as np
 import functools
 import matplotlib.pyplot as plt
 
-@functools.lru_cache(1024)
-
 
 def interpolateBezier( points, steps=10, t=None):
+    points = tuple(points)
     if len(points)==3:
         mapper = lambda t,p: (1-t)**2 * p[0] + 2*(1-t)*t*p[1] + t**2*p[2]
     elif len(points)==4:
@@ -329,6 +328,7 @@ class LineageGraph():
         (x0,y0),(x1,y1) = self.getNodeConnectionCoordinate(source,sink,**kwargs)
         controlPoints = self.getEdgeInternalControlPoints(x0,y0, x1, y1, wavyness=wavyness)
 
+
         for bi,(bx,by) in enumerate(self.interpolateEdge(x0,y0, x1, y1,wavyness=wavyness,stepCount=stepCount)):
             t = (bi/(stepCount-1))
             angle = interpolateBezierAngle(controlPoints,t )
@@ -507,13 +507,18 @@ class LineageGraph():
     def interpolateEdge(self,x0,y0, x1, y1, wavyness=None, stepCount=30,**kwargs):
         kwargs['wavyness'] = wavyness
         kwargs['stepCount'] = stepCount
+
         if wavyness is None or stepCount is None:
             raise ValueError('Wavyness and stepCount are required')
 
         controlPoints = self.getEdgeInternalControlPoints(x0,y0, x1, y1, **kwargs)
+        print(controlPoints)
+        print(stepCount)
+        interpolatedBezier = interpolateBezier( points=controlPoints, steps=stepCount)
+        print(interpolatedBezier)
         return [
             (bx,by)
-            for bi,(bx,by) in enumerate(interpolateBezier( points=controlPoints, steps=stepCount))
+            for bi,(bx,by) in enumerate(interpolatedBezier)
         ]
 
 
