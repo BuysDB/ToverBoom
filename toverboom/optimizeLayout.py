@@ -36,7 +36,8 @@ def optimize_layout(
 
     # Load the topology:
     graph = lineage_graph.graph
-
+    lg = lineage_graph
+    
     # The order of the clones (trellis) is stored here:
     trellisOrder = list(set([lineage for lineage,timepoint in lineage_graph.graph]))
 
