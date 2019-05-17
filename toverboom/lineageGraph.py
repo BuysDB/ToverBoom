@@ -705,23 +705,69 @@ class LineageGraph():
         isExtinct = self.graph.node[node].get('extinct')
         return isExtinct
 
-    def annotateNodes(self, ax, **kwargs):
+    def annotateNodes(self, ax, x_offset=0.5, nodesToAnnotate=None, **kwargs):
         plotArgs = kwargs.get('plotArgs',{})
         coordinates = self.getNodeCoordinates(**kwargs)
         for node,(x,y) in coordinates.items():
+            if nodesToAnnotate is not None and not node in nodesToAnnotate:
+                continue
             label = None
             if self.nodeIsExtinct(node):
-                label = f'{node[0]} +'
+                label = f'{node[0]} †'
             elif self.nodeIsLeaf(node):
                 label = f'{node[0]}'
             if label is not None:
-                ax.text( x+0.5, y, label, verticalalignment='center',horizontalalignment='left', **plotArgs)
+                ax.text( x+x_offset,
+                        y,
+                        label,
+                        verticalalignment='center',
+                        horizontalalignment='left',
+                        **plotArgs)
 
-    def plotPatches(self, ax,facecolor=(0.7,0.7,0.7,1),stepCount=30,lw=0.0, edgecolor='b',wavyness=0.8 ):
+    """
+    Plot patches (edges of the graph) over the tree
+        ax : axis to plot to
+        facecolor : default color to fill the patches with
+        stepCount : precision
+        lw : width of edges around the patches
+        edgecolor : edge color
+        wavyness
+        patchData : dataframe like:
+                    pd.DataFrame(
+                    {
+                        ((2, 10), (3, 22)):{'color':'red'},
+                        ((2, 10), (5, 22)):{'color':'red'}
+
+                    }).T
+
+    """
+    def plotPatches(self, ax,facecolor=(0.7,0.7,0.7,1),stepCount=30,lw=0.0, edgecolor='b',wavyness=0.4, patchData=None ):
         for source, sink in self.graph.edges():
+            fc = facecolor
+            ec = edgecolor
+            l = lw
+            if patchData is not None and (source,sink) in list(patchData.index):
+                # Find its postion @slow
+                index = list(patchData.index).index((source,sink))
+                try:
+                    fc =  patchData.iloc[index]['color']
+                    if np.isnan(fc):
+                        fc = facecolor
+                except Exception as e:
+                    pass
+                try:
+                    ec =  patchData.iloc[index]['edgecolor']
+                    if np.isnan(ec):
+                        ec = edgecolor
+                except Exception as e:
+                    pass
+                try:
+                    l =  patchData.iloc[index]['lw']
+                except Exception as e:
+                    pass
 
             ax.add_patch( plt.Polygon( self.getSegmentOutline( source, sink , wavyness=wavyness,stepCount=stepCount ) ,
-                                      facecolor=facecolor, lw=lw, edgecolor=edgecolor  ) )
+                                      facecolor=fc, lw=l, edgecolor=ec  ) )
 
 
     def getEmptyPlot(self):
@@ -747,12 +793,19 @@ class LineageGraph():
             defaultCellSize = 20,
             cellJitter=10,
             plotPatches=False,
-            defaultCellMarker = 'o'):
+            defaultCellMarker = 'o',
+            enableShadow=True,
+            shadow_x_offset = 0.1,
+            shadow_y_offset = -0.1,
+            shadow_alpha = 0.3,
+            shadow_size=1.3,
+            shadow_color = (0.1,0.1,0.1)
+            ):
         if ax is None:
             fig, ax = self.getEmptyPlot()
 
 
-        for clone, tp in self.graph.nodes:
+        for clone, tp in self.graph:
             node = (clone, tp)
             isLeaf = (self.graph.out_degree(node)==0)
 
@@ -809,6 +862,9 @@ class LineageGraph():
 
 
                 ax.scatter([cell_x],[cell_y],c=[c],s=[s], marker=m, zorder=8)
+                if enableShadow:
+                    ax.scatter([cell_x+shadow_x_offset],[cell_y+shadow_y_offset],c=[shadow_color],s=[s*shadow_size],alpha= shadow_alpha, marker=m, zorder=7)
+
 
         if plotPatches:
             self.plotEdges(ax, bezier=True,wavyness=wavyness,stepCount=30,plotArgs={'lw':0}, offsetCentroid=True)

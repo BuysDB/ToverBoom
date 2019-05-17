@@ -4,8 +4,8 @@ setup(
 	version='0.01',
 	author='Buys de Barbanson',
 	author_email='code@buysdb.nl',
-	description='Pysam related iterators',
+	description='A python module to generate good looking lineage trees ',
 	url='https://github.com/BuysDB/ToverBoom',
 	py_modules=['toverboom'],
-	install_requires=['pysam']
+	install_requires=['matplotlib','numpy','networkx','pandas']
 )
