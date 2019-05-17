@@ -675,6 +675,9 @@ class LineageGraph():
 
         return overlaps+lengths*0.0001, intersectingClones
 
+    def getXCoordinate(self, x):
+        return x*self.xDistance
+
     def drawNodeRadii(self, ax,**kwargs):
         graph = self.getGraph(kwargs.get('graph'))
         trellisCoordinates = self.getTrellisCoordinates(kwargs.get('trellisCoordinates'))
@@ -803,7 +806,9 @@ class LineageGraph():
         return fig, ax
 
 
-
+    def plot_vertical_lines(self, ax, coords, linewidth=1, linestyle=':', **kwargs):
+        for coord in coords:
+            ax.axvline(self.getXCoordinate(coord), lw=linewidth, linestyle=linestyle,**kwargs)
 
     def plotSingleCells(
             self,
