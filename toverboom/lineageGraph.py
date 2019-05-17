@@ -745,12 +745,12 @@ class LineageGraph():
     def plotPatches(self, ax,
         facecolor=(0.7,0.7,0.7,1),
         stepCount=30,
-        lw=0.0, edgecolor='b',wavyness=0.4,linestyle='-',
+        linewidth=0.0, edgecolor='b',wavyness=0.4,linestyle='-',
         patchData=None ):
         for source, sink in self.graph.edges():
             fc = facecolor
             ec = edgecolor
-            l = lw
+            l = linewidth
             ls = linestyle
             assignedFromPatchData = False
             if patchData is not None and (source,sink) in list(patchData.index):
@@ -771,17 +771,21 @@ class LineageGraph():
                     pass
                 try:
                     l =  patchData.iloc[index]['linewidth']
+                    if np.isnan(l):
+                        l = linewidth
                 except Exception as e:
                     pass
                 try:
-                    l =  patchData.iloc[index]['linestyle']
+                    ls =  patchData.iloc[index]['linestyle']
+                    if np.isnan(ls):
+                        ls = linestyle
                 except Exception as e:
                     pass
             if assignedFromPatchData or ( not assignedFromPatchData and facecolor is not None):
                 ax.add_patch(
                     plt.Polygon(
                         self.getSegmentOutline( source, sink , wavyness=wavyness,stepCount=stepCount ) ,
-                               facecolor=fc, lw=l, edgecolor=ec  ) )
+                               facecolor=fc, linestyle=ls, lw=l, edgecolor=ec  ) )
 
 
     def getEmptyPlot(self):
@@ -881,7 +885,7 @@ class LineageGraph():
 
 
         if plotPatches:
-            self.plotEdges(ax, bezier=True,wavyness=wavyness,stepCount=30,plotArgs={'lw':0}, offsetCentroid=True)
+            self.plotEdges(ax, bezier=True,wavyness=wavyness,stepCount=30,plotArgs={'linewidth':0}, offsetCentroid=True)
             self.plotPatches(ax=ax,wavyness=wavyness)
 
         # Remove plot spines:
