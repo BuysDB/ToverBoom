@@ -745,12 +745,13 @@ class LineageGraph():
     def plotPatches(self, ax,
         facecolor=(0.7,0.7,0.7,1),
         stepCount=30,
-        lw=0.0, edgecolor='b',wavyness=0.4,
+        lw=0.0, edgecolor='b',wavyness=0.4,linestyle='-',
         patchData=None ):
         for source, sink in self.graph.edges():
             fc = facecolor
             ec = edgecolor
             l = lw
+            ls = linestyle
             assignedFromPatchData = False
             if patchData is not None and (source,sink) in list(patchData.index):
                 # Find its postion @slow
@@ -769,7 +770,11 @@ class LineageGraph():
                 except Exception as e:
                     pass
                 try:
-                    l =  patchData.iloc[index]['lw']
+                    l =  patchData.iloc[index]['linewidth']
+                except Exception as e:
+                    pass
+                try:
+                    l =  patchData.iloc[index]['linestyle']
                 except Exception as e:
                     pass
             if assignedFromPatchData or ( not assignedFromPatchData and facecolor is not None):
