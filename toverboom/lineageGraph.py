@@ -730,8 +730,9 @@ class LineageGraph():
         facecolor : default color to fill the patches with,
                     None to not plot if no data is supplied in patchData
         stepCount : precision
-        lw : width of edges around the patches
+        linewidth : width of edges around the patches
         edgecolor : edge color
+        zorder : default z-order 
         wavyness
         patchData : dataframe like:
                     pd.DataFrame(
@@ -746,12 +747,14 @@ class LineageGraph():
         facecolor=(0.7,0.7,0.7,1),
         stepCount=30,
         linewidth=0.0, edgecolor='b',wavyness=0.4,linestyle='-',
+        zorder=2,
         patchData=None ):
         for source, sink in self.graph.edges():
             fc = facecolor
             ec = edgecolor
             l = linewidth
             ls = linestyle
+            z = zorder
             assignedFromPatchData = False
             if patchData is not None and (source,sink) in list(patchData.index):
                 # Find its postion @slow
@@ -763,6 +766,13 @@ class LineageGraph():
                         fc = facecolor
                 except Exception as e:
                     pass
+                try:
+                    z =  patchData.iloc[index]['zorder']
+                    if np.isnan(fc):
+                        z = zorder
+                except Exception as e:
+                    pass
+
                 try:
                     ec =  patchData.iloc[index]['edgecolor']
                     if np.isnan(ec):
@@ -785,7 +795,7 @@ class LineageGraph():
                 ax.add_patch(
                     plt.Polygon(
                         self.getSegmentOutline( source, sink , wavyness=wavyness,stepCount=stepCount ) ,
-                               facecolor=fc, linestyle=ls, lw=l, edgecolor=ec  ) )
+                               facecolor=fc, linestyle=ls, lw=l, edgecolor=ec, zorder=z  ) )
 
 
     def getEmptyPlot(self):
