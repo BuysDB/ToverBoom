@@ -727,7 +727,8 @@ class LineageGraph():
     """
     Plot patches (edges of the graph) over the tree
         ax : axis to plot to
-        facecolor : default color to fill the patches with
+        facecolor : default color to fill the patches with,
+                    None to not plot if no data is supplied in patchData
         stepCount : precision
         lw : width of edges around the patches
         edgecolor : edge color
@@ -741,13 +742,19 @@ class LineageGraph():
                     }).T
 
     """
-    def plotPatches(self, ax,facecolor=(0.7,0.7,0.7,1),stepCount=30,lw=0.0, edgecolor='b',wavyness=0.4, patchData=None ):
+    def plotPatches(self, ax,
+        facecolor=(0.7,0.7,0.7,1),
+        stepCount=30,
+        lw=0.0, edgecolor='b',wavyness=0.4,
+        patchData=None ):
         for source, sink in self.graph.edges():
             fc = facecolor
             ec = edgecolor
             l = lw
+            assignedFromPatchData = False
             if patchData is not None and (source,sink) in list(patchData.index):
                 # Find its postion @slow
+                assignedFromPatchData = True
                 index = list(patchData.index).index((source,sink))
                 try:
                     fc =  patchData.iloc[index]['color']
@@ -765,9 +772,11 @@ class LineageGraph():
                     l =  patchData.iloc[index]['lw']
                 except Exception as e:
                     pass
-
-            ax.add_patch( plt.Polygon( self.getSegmentOutline( source, sink , wavyness=wavyness,stepCount=stepCount ) ,
-                                      facecolor=fc, lw=l, edgecolor=ec  ) )
+            if assignedFromPatchData or ( not assignedFromPatchData and facecolor is not None):
+                ax.add_patch(
+                    plt.Polygon(
+                        self.getSegmentOutline( source, sink , wavyness=wavyness,stepCount=stepCount ) ,
+                               facecolor=fc, lw=l, edgecolor=ec  ) )
 
 
     def getEmptyPlot(self):
