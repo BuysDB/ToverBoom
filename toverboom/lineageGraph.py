@@ -732,7 +732,7 @@ class LineageGraph():
         stepCount : precision
         linewidth : width of edges around the patches
         edgecolor : edge color
-        zorder : default z-order 
+        zorder : default z-order
         wavyness
         patchData : dataframe like:
                     pd.DataFrame(
@@ -768,7 +768,7 @@ class LineageGraph():
                     pass
                 try:
                     z =  patchData.iloc[index]['zorder']
-                    if np.isnan(fc):
+                    if np.isnan(z):
                         z = zorder
                 except Exception as e:
                     pass
