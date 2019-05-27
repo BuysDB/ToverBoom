@@ -13,7 +13,8 @@ numpy
 
 ### Installation
 ```
-pip3 install https://github.com/BuysDB/ToverBoom/archive/master.zip
+git clone https://github.com/BuysDB/ToverBoom
+pip install -e ./ToverBoom
 ```
 ### Examples
 see notebooks folder
