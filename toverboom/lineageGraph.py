@@ -821,6 +821,8 @@ class LineageGraph():
             labelAttribute = 'label',
             markerAttribute= 'marker',
             sizeAttribute = 'size',
+            edgeWidthAttribute='edge_width',
+            edgeColorAttribute='edge_color',
             wavyness = 0.4,
             defaultCellColor = 'k',
             defaultCellSize = 20,
@@ -832,7 +834,9 @@ class LineageGraph():
             shadow_y_offset = -0.1,
             shadow_alpha = 0.3,
             shadow_size=1.3,
-            shadow_color = (0.1,0.1,0.1)
+            shadow_color = (0.1,0.1,0.1),
+            defaultLinewidth = 1,
+            defaultEdgecolor = (1,1,1)
             ):
         if ax is None:
             fig, ax = self.getEmptyPlot()
@@ -855,7 +859,8 @@ class LineageGraph():
             marker = []
             size = []
             annotation = []
-
+            edge_color = []
+            edge_width = []
 
             for cellIndex, metaData in cellsToDraw.iterrows():
 
@@ -893,10 +898,29 @@ class LineageGraph():
                     s = defaultCellSize
                 size.append(s)
 
+                # Edge color
+                try:
+                    edgecolor = metaData[edgeColorAttribute]
+                except Exception as e:
+                    edgecolor = defaultEdgecolor
+                edge_color.append(edgecolor)
 
-                ax.scatter([cell_x],[cell_y],c=[c],s=[s], marker=m, zorder=8)
+                # Edge width
+                try:
+                    linewidth = metaData[edgeWidthAttribute]
+                except Exception as e:
+                    linewidth = defaultLinewidth
+                edge_width.append(linewidth)
+
+
+                ax.scatter([cell_x],[cell_y],c=[c],s=[s],
+                    marker=m,
+                    zorder=8,
+                    linewidth=linewidth,
+                    edgecolor=edgecolor
+                    )
                 if enableShadow:
-                    ax.scatter([cell_x+shadow_x_offset],[cell_y+shadow_y_offset],c=[shadow_color],s=[s*shadow_size],alpha= shadow_alpha, marker=m, zorder=7)
+                    ax.scatter([cell_x+shadow_x_offset],[cell_y+shadow_y_offset],c=[shadow_color],s=[ (s+linewidth)*shadow_size],alpha= shadow_alpha, marker=m, zorder=7)
 
 
         if plotPatches:
