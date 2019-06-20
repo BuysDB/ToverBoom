@@ -34,7 +34,7 @@ def cnvDistance(cnvStates, cnvStateA, cnvStateB ):
     return len(distancesPerChromosome), distancesPerChromosome
 
 
-def create_ancestry_graph(cnvStates, maxCNVdistance= 3, select_clusters=None)
+def create_ancestry_graph(cnvStates, maxCNVdistance= 3, select_clusters=None):
     """
     Create a directional graph where every node is an unique copy number state.
     Edges indicate a possibility to traverse between copy number state with a
