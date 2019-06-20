@@ -836,7 +836,9 @@ class LineageGraph():
             shadow_size=1.3,
             shadow_color = (0.1,0.1,0.1),
             defaultLinewidth = 1,
-            defaultEdgecolor = (1,1,1)
+            defaultEdgecolor = (1,1,1),
+            defaultZorder=0,
+            zorderAttribute='z-order'
             ):
         if ax is None:
             fig, ax = self.getEmptyPlot()
@@ -861,7 +863,7 @@ class LineageGraph():
             annotation = []
             edge_color = []
             edge_width = []
-
+            zOrders=[]
             for cellIndex, metaData in cellsToDraw.iterrows():
 
                 # Cell position calculation
@@ -912,15 +914,25 @@ class LineageGraph():
                     linewidth = defaultLinewidth
                 edge_width.append(linewidth)
 
+                # Z-order
+                try:
+                    zorder = metaData[zorderAttribute]
+                except Exception as e:
+                    zorder = defaultZorder
+                zOrders.append(zorder)
 
                 ax.scatter([cell_x],[cell_y],c=[c],s=[s],
                     marker=m,
-                    zorder=8,
+                    zorder=8+ zorder,
                     linewidth=linewidth,
                     edgecolor=edgecolor
                     )
                 if enableShadow:
-                    ax.scatter([cell_x+shadow_x_offset],[cell_y+shadow_y_offset],c=[shadow_color],s=[ (s+linewidth)*shadow_size],alpha= shadow_alpha, marker=m, zorder=7)
+                    ax.scatter([cell_x+shadow_x_offset],
+                                [cell_y+shadow_y_offset],
+                                c=[shadow_color],
+                                s=[ (s+linewidth)*shadow_size],
+                                alpha= shadow_alpha, marker=m, zorder=7)
 
 
         if plotPatches:
