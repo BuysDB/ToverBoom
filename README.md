@@ -3,7 +3,6 @@
 <img alt="Tree plus jawbreaker" src="http://buysdb.nl/projects/toverboom/toverboom.png">
 
 ## Functionality
-
 Plot cells on a lineage tree with a time axis.
 
 ### Prerequisites
