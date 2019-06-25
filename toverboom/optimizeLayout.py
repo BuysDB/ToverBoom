@@ -10,6 +10,7 @@ def swap(indexA,indexB, listToSwap):
 
 def optimize_layout(
             lineage_graph,
+            initial_order = None,
             plotArgs = {
                         'xDistance':1,
                         'verticalSpacing':0.1,
@@ -39,7 +40,10 @@ def optimize_layout(
     lg = lineage_graph
 
     # The order of the clones (trellis) is stored here:
-    trellisOrder = list(set([lineage for lineage,timepoint in lineage_graph.graph]))
+    if initial_order is not None:
+        trellisOrder = initial_order
+    else:
+        trellisOrder = list(set([lineage for lineage,timepoint in lineage_graph.graph]))
 
     # Obtain the score for the first trellis:
     result = lg.optimizeGraph( graph, tuple(trellisOrder), plot=plot, ax=ax, **plotArgs)

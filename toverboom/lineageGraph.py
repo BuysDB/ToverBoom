@@ -5,7 +5,9 @@ import numpy as np
 import functools
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
-
+import collections
+import random
+import itertools
 
 def interpolateBezier( points, steps=10, t=None):
     points = tuple(points)
@@ -16,6 +18,8 @@ def interpolateBezier( points, steps=10, t=None):
          3* np.power((1-t),2) *t *p[1] +\
          3*(1-t)*np.power(t,2)*p[2] +\
          np.power(t,3)*p[3])
+    else:
+        raise Exception('Can only interpolate cubic and quadratic splines (3 or 4 parameters, got: %s'  % str(points))
 
     if t is not None:
         return   mapper(t, [q[0] for q in points]), mapper(t, [q[1] for q in points])
@@ -499,9 +503,10 @@ class LineageGraph():
         initRadius=self.getInitRadius(kwargs.get('initRadius'))
 
         if x1 is None or y1 is None:
-            nodeCoordinates = self.getNodeCoordinates() # @todo params
+            #nodeCoordinates = self.getNodeCoordinates()[(x0orSource,y0orSink)] # @todo params
             #x0,y0 = nodeCoordinates[source]
             #x1,y1 = nodeCoordinates[sink]
+            source,sink = x0orSource,y0orSink
             (x0,y0),(x1,y1) = self.getNodeConnectionCoordinate(source,sink, **kwargs)
         else:
             x0  = x0orSource
@@ -809,6 +814,340 @@ class LineageGraph():
     def plot_vertical_lines(self, ax, coords, linewidth=1, linestyle=':', **kwargs):
         for coord in coords:
             ax.axvline(self.getXCoordinate(coord), lw=linewidth, linestyle=linestyle,**kwargs)
+
+
+    def plot_stack(self, cellCnvBarcode, tf, ax, fig):
+
+
+        random.seed(4)
+        graph=self.graph
+        colorsList = list(plt.get_cmap('tab20').colors)
+        markersList = 'os^<>'
+        #sns.palplot(colorsList)
+        del colorsList[-6:-4] # remove grays
+        #sns.palplot(colorsList)
+        colorsList = colorsList[::2] + colorsList[1::2]
+        random.shuffle(colorsList)
+        colors =  itertools.product(markersList,colorsList)
+        wavyness=0.5
+        self.xDistance=10
+        self.verticalSpacing = 0.2
+        #lg.initRadius=0.5
+        #lg.setRadiusAttributes(defaultRadius=0.5)
+
+        cellJitter=0.75*self.xDistance
+
+        ax.clear()
+
+
+        for source, sink in graph.edges():
+            ax.add_patch( plt.Polygon( self.getSegmentOutline( source, sink , wavyness=wavyness,stepCount=30 ) ,
+                                      facecolor=(0.7,0.7,0.7,1), lw=0.0, edgecolor='b'  ) )
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        # This plots the internals of the curves
+        self.plotEdges(ax, bezier=True,wavyness=wavyness,stepCount=30,plotArgs={'lw':0}, offsetCentroid=True)
+        self.annotateNodes(ax, plotArgs={'size':8}) # This draws the node labels
+
+
+
+        fig.canvas.draw()
+        #raise KeyboardInterrupt()
+
+        #lg.drawNodeRadii(ax)
+
+        cloneColors = {}
+        #Iterate first edges where sourceLineage!=sinkLineage
+        for source, sink in [
+            (u,v) for u,v in graph.edges()
+                if u[0]!=v[0]]+[
+            (u,v) for u,v in graph.edges() if u[0]==v[0]]:
+
+            timeStart,timeEnd= source[1],sink[1]
+            internalControl = self.getEdgeInternalControlPoints(source,sink,wavyness=wavyness)
+            if not sink[0] in tf.columns:
+                continue
+
+            timeAxis = [tp for tp in tf[sink[0]].columns if tp>=timeStart and tp<=timeEnd]
+            if len(timeAxis)==0:
+                continue
+
+            #Obtain the abundance of sub copy number clones:
+            q = tf[sink[0]].copy()
+            #Interpolate the start and end value:
+            if not timeStart in q.columns:
+                q[timeStart] = np.nan
+            if not timeEnd in q.columns:
+                q[timeEnd] = np.nan
+
+
+            # Resort the columns so they are in order with time (Otherwise the interpolation fails)
+            q = q.reindex(sorted(q.columns), axis=1)
+            q =q.T.interpolate('index').T
+
+            timeAxis = list(sorted(list(set(timeAxis+[timeStart,timeEnd]))))
+
+            currentY=None
+            cloneAbundance = q.loc[:,timeAxis]
+            cloneAbundance = cloneAbundance[cloneAbundance.sum(1)>0]
+
+
+            yCenter = np.array([
+                interpolateBezier(t=(t-timeStart)/(timeEnd-timeStart), points=internalControl)[1]
+                for t in timeAxis])
+
+
+            cellsAtThisTimepoint = cellCnvBarcode.loc[sink[1]]
+            cellsAtThisTimepointAndCluster = cellsAtThisTimepoint[cellsAtThisTimepoint['cluster']==sink[0]]
+
+            prevColors = collections.deque(maxlen=4)
+
+            cloneOrder = [clone for clone,row in cloneAbundance.iterrows()]
+            for cloneIndex,(clone,row) in enumerate(cloneAbundance.iterrows()):
+
+                if currentY is None:
+                    currentY=np.zeros(row.values.shape[0])
+                    # Prevent a mixture of missing and non-missing data, initialise nan if no data:
+                    currentY[np.isnan(row.values)] = np.nan
+                nextY=currentY+row.values
+                #print(currentY,nextY)
+                r = self.interpolateSubSegment(source,sink, wavyness=wavyness,
+                              timeAxis=timeAxis,
+                              yStarts=currentY, yEnds=nextY)
+
+
+                forward = r[0]
+                reverse  = r[1]
+                if len(cloneOrder)>1:
+                    nextColor,nextMarker = cloneColors.get(cloneOrder[(cloneIndex+1)%len(cloneOrder)],(None,None))
+                else:
+                    nextColor,nextMarker= (None,None)
+                if not clone in cloneColors:
+                    marker,color = next(colors)
+                    while color in prevColors or color == nextColor:
+                        marker,color = next(colors)
+                    cloneColors[clone] = (color, marker)
+                else:
+                    color, marker = cloneColors[clone]
+
+                prevColors.append(color)
+                ax.add_patch(
+                        plt.Polygon(
+                           forward+list(reversed(reverse)),facecolor=color #,lw=0.1,  edgecolor='#000000'
+                    )
+                )
+                if True:
+                    # Add cells:
+                    cellX =[]
+                    cellY =[]
+                    cellLabels=[]
+                    cellsWithCurrentBarcode = cellsAtThisTimepointAndCluster[cellsAtThisTimepointAndCluster['barcode']==clone]
+                    for cell,_ in cellsWithCurrentBarcode.iterrows():
+                        print(cell, clone)
+                        xForward = np.array([x for x,y in forward])
+                        yForward = np.array([y for x,y in forward])
+                        xReverse = np.array([x for x,y in reverse])
+                        yReverse = np.array([y for x,y in reverse])
+
+                        x = np.random.uniform(
+                            low=np.nanmin(xForward)*(1+cellJitter),
+                            high=np.nanmax(xForward)*(1-cellJitter))
+
+                        high = np.nanmin((np.nanmax(xForward), (np.nanmean(xForward)+(cellJitter))))
+                        low = np.nanmin((np.nanmax(xForward), (np.nanmean(xForward)-(cellJitter))))
+
+
+                        x = np.random.uniform(
+                            low=low,
+                            high=high)
+
+
+                        if True:
+                            yMin = np.interp(x,xForward[np.isfinite(xForward)],yForward[np.isfinite(yForward)])
+                            yMax = np.interp(x,xReverse[np.isfinite(xReverse)],yReverse[np.isfinite(yReverse)])
+                        else:
+                            yMin = xForward[1]
+                            yMax = xReverse[1]
+
+
+                        y = np.random.uniform(
+                            low=yMin,
+                            high=yMax)
+
+                        #x.add_patch(plt.Circle((x, y), 1, color=color, alpha=1))
+                        cellX.append(x)
+                        cellY.append(y)
+                        cellLabels.append(cell)
+                    if len(cellX)>0:
+                        size = 14
+                        plt.scatter(cellX,cellY, s=size*2, marker=marker,color='k', zorder=6,alpha=0.1)
+                        plt.scatter(cellX,cellY, s=size*1.5,marker=marker, color='k', zorder=7,alpha=0.5)
+                        plt.scatter(cellX,cellY, s=14, color=color, marker=marker, zorder=10, edgecolor='w',linewidth=0.3)
+                currentY = nextY
+
+
+        fig.canvas.draw()
+
+
+    def plot_stack_X(self,
+        cell_to_clone_mapping,
+        clone_abundance_frame,
+        ax,
+        wavyness=0.8,
+        cellJitter=10,
+        ):
+
+
+        random.seed(4)
+
+        # Assign clones to unique marker/color combinations,
+        #this is only possible _given_ a ordering
+        colorsList = list(plt.get_cmap('tab20').colors)
+        markersList = 'os^<>'
+        del colorsList[-6:-4] # remove grays
+        random.shuffle(colorsList)
+        colors =  itertools.product(markersList,colorsList)
+
+        cloneColors = {}
+
+        graph=self.graph
+        tf = clone_abundance_frame
+        cellCnvBarcode = cell_to_clone_mapping
+
+        #Iterate first edges where sourceLineage!=sinkLineage
+        for source, sink in [
+            (u,v) for u,v in graph.edges()
+                if u[0]!=v[0]]+[
+            (u,v) for u,v in graph.edges() if u[0]==v[0]]:
+
+            timeStart,timeEnd= source[1],sink[1]
+
+            internalControl = self.getEdgeInternalControlPoints(source,sink,wavyness=wavyness)
+
+            #internalControl = (x0,y0),(x1,y1) = self.getNodeConnectionCoordinate(source,sink)
+            #controlPoints = self.getEdgeInternalControlPoints(x0,y0, x1, y1, wavyness=wavyness)
+            if not sink[0] in tf.columns:
+                continue
+
+            timeAxis = [tp for tp in tf[sink[0]].columns if tp>=timeStart and tp<=timeEnd]
+            if len(timeAxis)==0:
+                continue
+
+            #Obtain the abundance of sub copy number clones:
+            q = tf[sink[0]].copy()
+            #Interpolate the start and end value:
+            if not timeStart in q.columns:
+                q[timeStart] = np.nan
+            if not timeEnd in q.columns:
+                q[timeEnd] = np.nan
+
+
+            # Resort the columns so they are in order with time (Otherwise the interpolation fails)
+            q = q.reindex(sorted(q.columns), axis=1)
+            q = q.T.interpolate('index').T
+
+            timeAxis = list(sorted(list(set(timeAxis+[timeStart,timeEnd]))))
+
+            currentY=None
+            cloneAbundance = q.loc[:,timeAxis]
+            cloneAbundance = cloneAbundance[cloneAbundance.sum(1)>0]
+
+
+            yCenter = np.array([
+                interpolateBezier(t=(t-timeStart)/(timeEnd-timeStart), points=internalControl)[1]
+                for t in timeAxis])
+
+
+            cellsAtThisTimepoint = cellCnvBarcode.loc[sink[1]]
+            cellsAtThisTimepointAndCluster = cellsAtThisTimepoint[cellsAtThisTimepoint['cluster']==sink[0]]
+
+            prevColors = collections.deque(maxlen=4)
+
+            cloneOrder = [clone for clone,row in cloneAbundance.iterrows()]
+            for cloneIndex,(clone,row) in enumerate(cloneAbundance.iterrows()):
+
+                if currentY is None:
+                    currentY=np.zeros(row.values.shape[0])
+                    # Prevent a mixture of missing and non-missing data, initialise nan if no data:
+                    currentY[np.isnan(row.values)] = np.nan
+                nextY=currentY+row.values
+                #print(currentY,nextY)
+                r = self.interpolateSubSegment(source,sink, wavyness=wavyness,
+                              timeAxis=timeAxis,
+                              yStarts=currentY, yEnds=nextY)
+
+
+                forward = r[0]
+                reverse  = r[1]
+                if len(cloneOrder)>1:
+                    nextColor,nextMarker = cloneColors.get(cloneOrder[(cloneIndex+1)%len(cloneOrder)],(None,None))
+                else:
+                    nextColor,nextMarker= (None,None)
+                if not clone in cloneColors:
+                    marker,color = next(colors)
+                    while color in prevColors or color == nextColor:
+                        marker,color = next(colors)
+                    cloneColors[clone] = (color, marker)
+                else:
+                    color, marker = cloneColors[clone]
+
+                prevColors.append(color)
+                ax.add_patch(
+                        plt.Polygon(
+                           forward+list(reversed(reverse)),facecolor=color ,lw=1,  edgecolor='#000000'
+                    )
+                )
+
+                # Add cells:
+                cellX =[]
+                cellY =[]
+                cellLabels=[]
+                cellsWithCurrentBarcode = cellsAtThisTimepointAndCluster[cellsAtThisTimepointAndCluster['barcode']==clone]
+                for cell in cellsWithCurrentBarcode:
+                    xForward = np.array([x for x,y in forward])
+                    yForward = np.array([y for x,y in forward])
+                    xReverse = np.array([x for x,y in reverse])
+                    yReverse = np.array([y for x,y in reverse])
+
+                    x = np.random.uniform(
+                        low=np.nanmin(xForward)*(1+cellJitter),
+                        high=np.nanmax(xForward)*(1-cellJitter))
+
+                    high = np.nanmin((np.nanmax(xForward), (np.nanmean(xForward)+(cellJitter))))
+                    low = np.nanmin((np.nanmax(xForward), (np.nanmean(xForward)-(cellJitter))))
+
+
+                    x = np.random.uniform(
+                        low=low,
+                        high=high)
+
+
+                    if True:
+                        yMin = np.interp(x,xForward[np.isfinite(xForward)],yForward[np.isfinite(yForward)])
+                        yMax = np.interp(x,xReverse[np.isfinite(xReverse)],yReverse[np.isfinite(yReverse)])
+                    else:
+                        yMin = xForward[1]
+                        yMax = xReverse[1]
+
+
+                    y = np.random.uniform(
+                        low=yMin,
+                        high=yMax)
+
+                    #x.add_patch(plt.Circle((x, y), 1, color=color, alpha=1))
+                    cellX.append(x)
+                    cellY.append(y)
+                    cellLabels.append(cell)
+                if len(cellX)>0:
+                    size = 14
+                    plt.scatter(cellX,cellY, s=size*2, marker=marker,color='k', zorder=6,alpha=0.1)
+                    plt.scatter(cellX,cellY, s=size*1.5,marker=marker, color='k', zorder=7,alpha=0.5)
+                    plt.scatter(cellX,cellY, s=14, color=color, marker=marker, zorder=10, edgecolor='w',linewidth=0.3)
+            currentY = nextY
+
 
     def plotSingleCells(
             self,
