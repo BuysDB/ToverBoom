@@ -816,6 +816,11 @@ class LineageGraph():
             ax.axvline(self.getXCoordinate(coord), lw=linewidth, linestyle=linestyle,**kwargs)
 
 
+    def plot_xticks(self, ax, coords, **kwargs):
+        xticks = np.insert(coords, 0, 0)
+        ax.set_xticks(self.getXCoordinate(xticks), **kwargs)
+
+
     def plot_stack(self, cellCnvBarcode, tf, ax, fig):
 
 
