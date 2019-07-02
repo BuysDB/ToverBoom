@@ -1,21 +1,21 @@
 import PIL.Image as Image
 import argparse
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 import os
 import networkx as nx
-import sys
-sys.path.append('~/PycharmProjects/ToverBoom/')
 import toverboom
 import toverboom.lineageGraph
 import toverboom.optimizeLayout
 import toverboom.preprocessing
-import importlib
-importlib.reload(toverboom)
-importlib.reload(toverboom.lineageGraph)
-importlib.reload(toverboom.preprocessing)
-importlib.reload(toverboom.optimizeLayout)
+# import importlib
+# importlib.reload(toverboom)
+# importlib.reload(toverboom.lineageGraph)
+# importlib.reload(toverboom.preprocessing)
+# importlib.reload(toverboom.optimizeLayout)
 
 
 def create_topfolder(directory):
@@ -67,28 +67,21 @@ def test_visual():
     return None
 
 
-def construct_df_per_snv(snvData, cellCnv):
-    for column in snvData.loc[list(cellCnv.index)].columns:
-        # color snvs
-        cellData['color'] = [{0: '#1d2bf7', 0.45: '#5b94ff',
-                              1: 'r', 0.55: '#ff7575'}.get(cluster, 'grey') for cluster in snvData[column]]
+def construct_df_per_snv(cellData, snvData, column):
+    cellData['color'] = [{0: '#1d2bf7', 0.45: '#5b94ff',
+                          1: 'r', 0.55: '#ff7575'}.get(cluster, 'grey') for cluster in snvData[column]]
 
-        # Assign markers
-        cellData['marker'] = [{0: 'o', 0.45: 'o', 1: 's', 0.55: 's'}.get(cluster, '.') for cluster in snvData[column]]
-
-        cellData['size'] = [{0: 28, 0.45: 20,
-                             1: 28, 0.55: 20}.get(cluster, 3) for cluster in snvData[column]]
-
-        # drawing order
-        cellData['drawing order'] = [{1: 1, 0: 2, 0.55: 3, 0.45: 4}.get(cluster, 5) for cluster in snvData[column]]
-
-        cellData.sort_values(by='drawing order', ascending=False, inplace=True, na_position='last')
+    # Assign markers
+    cellData['marker'] = [{0: 'o', 0.45: 'o', 1: 's', 0.55: 's'}.get(cluster, '.') for cluster in snvData[column]]
+    cellData['size'] = [{0: 28, 0.45: 20,
+                         1: 28, 0.55: 20}.get(cluster, 3) for cluster in snvData[column]]
+    # drawing order
+    cellData['drawing order'] = [{1: 1, 0: 2, 0.55: 3, 0.45: 4}.get(cluster, 5) for cluster in snvData[column]]
+    cellData.sort_values(by='drawing order', ascending=False, inplace=True, na_position='last')
+    return cellData
 
 
-        return cellData
-
-
-def plot_per_snv(lg, cellData):
+def plot_per_snv(lg, cellData, replicate, column, output):
     fig, ax = lg.getEmptyPlot()
     lg.plotPatches(ax, facecolor=(0.8, 0.8, 0.8, 1))
     lg.plotSingleCells(cellData, ax=ax, fig=fig, plotPatches=False, enableShadow=True)
@@ -109,21 +102,20 @@ def plot_per_snv(lg, cellData):
 
     ax.set_xlabel('Time (weeks)')
     plt.title(f"{replicate} {column[0]}:{column[1]}")
-    plt.savefig(f"./output/{replicate}/{replicate}_{column[0]}_{column[1]}.png", dpi=300)
+    plt.savefig(f"{output}/{replicate}/{replicate}_{column[0]}_{column[1]}.png", dpi=300)
+    plt.close(fig)
 
-
-def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellCnv):
-    create_topfolder(f"./output/{replicate}")
-
+def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellCnv, output):
+    create_topfolder(f"{output}/{replicate}")
     # Instantiate the lineage graph object
-    ## TODO: solve using package itself...
     lg = toverboom.lineageGraph.LineageGraph(cnv_tree)
     # Create a figure for our plot:
     fig, ax = plt.subplots()
     # Find the best layout
-    toverboom.optimizeLayout.optimize_layout(lg,
+    trellisOrder = toverboom.optimizeLayout.optimize_layout(lg,
                                              visualize_progress_ax=ax,
-                                             visualize_progress_fig=fig)
+                                             visualize_progress_fig=fig,
+                                             initial_order=None)
     # Plot the polygons of the tree
     fig, ax = plt.subplots()
     # wavyness controls how wavy the segments of the tree are
@@ -142,14 +134,18 @@ def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellC
     fig.canvas.draw()
 
     # combine imputed and raw snv matrix
-    imputed_visualize = gen_imputed_matrix_for_visualization(raw_snv_matrix, imputed_snv_matrix)
-    snvData = imputed_visualize.loc[replicate].loc[cellCnv.index]
-    cellData = cellCnv.copy()
+    snvData = gen_imputed_matrix_for_visualization(raw_snv_matrix, imputed_snv_matrix)
+    snvData = snvData.loc[replicate]
+    # start constructing plotting dataframe by copying cellCnv
+    cellData = cellCnv.loc[replicate]
     cellData['tp'] = [passage for passage, plate, cell in list(cellData.index)]
+    # Overlapped df
+    snvData = snvData.loc[cellData.index]
     # plot snv on cnv tree per snv
-    for column in snvData.loc[list(cellCnv.index)].columns:
-        cellData = plot_per_snv(snvData, cellCnv, column)
-        plot_per_snv(lg, cellData)
+    for column in snvData.loc[list(cellData.index)].columns:
+        plotData = construct_df_per_snv(cellData, snvData, column)
+        plot_per_snv(lg, plotData, replicate, column, output)
+        break
 
 
 def pillow_grid(images, max_horiz=np.iinfo(int).max):
@@ -167,11 +163,12 @@ def pillow_grid(images, max_horiz=np.iinfo(int).max):
     return im_grid
 
 
-def combine_images(combine_all= False):
+def combine_images(output, combine_all= False):
     # find all file with the same snv name replicate here doesn't matter.
+    replicate = 'APKS1'
     fullpiclist = []
 
-    for root, dirs, files in os.walk(f"./output/APKS1/", topdown=True):
+    for root, dirs, files in os.walk(f"{output}/{replicate}/", topdown=True):
         for i, name in enumerate(files):
             piclist = []
             rep, snvname = name.split(sep='_', maxsplit=1)
@@ -181,16 +178,16 @@ def combine_images(combine_all= False):
                 print(snvname)
                 apkslist = ['APKS1', 'APKS2', 'APKS3']
                 for replicate in apkslist:
-                    im = Image.open(f"./output/{replicate}/{replicate}_{snvname}")
+                    im = Image.open(f"{output}/{replicate}/{replicate}_{snvname}")
                     piclist.append(im)
                     fullpiclist.append(im)
                     combined_image = pillow_grid(piclist, 3)
-                    create_topfolder(f"./output/combined/")
-                    combined_image.save(f"./output/combined/{snvname}")
+                    create_topfolder(f"{output}/combined/")
+                    combined_image.save(f"{output}/combined/{snvname}")
 
     if combine_all == True:
-        full_image = pil_grid(fullpiclist, 3)
-        full_image.save(f"./output/combined/all_snv.png")
+        full_image = pillow_grid(fullpiclist, 3)
+        full_image.save(f"{output}/combined/all_snv.png")
 
 
 
@@ -209,8 +206,8 @@ args = parser.parse_args()
 
 
 def main():
-    raw_snv_matrix = pd.read_pickle(args.raw_snv_matrix)
     imputed_snv_matrix = pd.read_pickle(args.imputed_snv_matrix)
+    raw_snv_matrix = pd.read_pickle(args.raw_snv_matrix).loc[imputed_snv_matrix.index]
     cellCnv = pd.read_pickle(args.cellCnv)
 
 
@@ -218,15 +215,19 @@ def main():
         replicates = ['APKS1', 'APKS2', 'APKS3']
         for i, replicate in enumerate(replicates):
             cnv_tree_graph = nx.read_gpickle(args.tree_graphs[i])
-            per_replicate(replicate, cnv_tree_graph, raw_snv_matrix, imputed_snv_matrix, cellCnv)
+            per_replicate(replicate, cnv_tree_graph, raw_snv_matrix, imputed_snv_matrix, cellCnv, args.output)
 
         print("Generating comparison between replicates")
-        combine_images(combine_all = args.combine_all)
+        combine_images(args.output, combine_all = args.combine_all)
 
     else:
-        per_replicate(args.replicate)
-        print(f"{args.replicate} figure generation finished!")
-
+        if len(args.tree_graphs) == 1:
+            cnv_tree_graph = nx.read_gpickle(args.tree_graphs[0])
+            per_replicate(args.replicate, cnv_tree_graph, raw_snv_matrix, imputed_snv_matrix, cellCnv, args.output)
+            print(f"{args.replicate} figure generation finished!")
+        else:
+            print("Error: -t received >1 tree graphs. Please modify the parameter.")
+            exit()
 
 if __name__ == "__main__":
     main()
@@ -234,3 +235,4 @@ if __name__ == "__main__":
 
 
 
+# ./data/APKS2_CNV_tree_33.pickle ./data/APKS3_CNV_tree_33.pickle
