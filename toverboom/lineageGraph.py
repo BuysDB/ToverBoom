@@ -818,7 +818,6 @@ class LineageGraph():
 
     def plot_stack(self, cellCnvBarcode, tf, ax, fig):
 
-
         random.seed(4)
         graph=self.graph
         colorsList = list(plt.get_cmap('tab20').colors)
@@ -828,7 +827,9 @@ class LineageGraph():
         #sns.palplot(colorsList)
         colorsList = colorsList[::2] + colorsList[1::2]
         random.shuffle(colorsList)
-        colors =  itertools.product(markersList,colorsList)
+        colors =  list(itertools.product(markersList,colorsList))
+        random.shuffle(colors)
+        color_index = 0
         wavyness=0.5
         self.xDistance=10
         self.verticalSpacing = 0.2
@@ -926,9 +927,12 @@ class LineageGraph():
                 else:
                     nextColor,nextMarker= (None,None)
                 if not clone in cloneColors:
-                    marker,color = next(colors)
+                    marker,color = colors[color_index]
+                    color_index = color_index+1 if color_index<len(colors)-1 else 0
+
                     while color in prevColors or color == nextColor:
-                        marker,color = next(colors)
+                        marker,color =  colors[color_index]
+                        color_index = color_index+1 if color_index<len(colors)-1 else 0
                     cloneColors[clone] = (color, marker)
                 else:
                     color, marker = cloneColors[clone]
@@ -1087,9 +1091,12 @@ class LineageGraph():
                 else:
                     nextColor,nextMarker= (None,None)
                 if not clone in cloneColors:
-                    marker,color = next(colors)
+
+                    marker,color = colors[color_index]
+                    color_index = color_index+1 if color_index<len(colors)-1 else 0
                     while color in prevColors or color == nextColor:
-                        marker,color = next(colors)
+                        marker,color = colors[color_index]
+                        color_index = color_index+1 if color_index<len(colors)-1 else 0
                     cloneColors[clone] = (color, marker)
                 else:
                     color, marker = cloneColors[clone]
