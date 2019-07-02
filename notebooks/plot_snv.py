@@ -11,11 +11,11 @@ import toverboom
 import toverboom.lineageGraph
 import toverboom.optimizeLayout
 import toverboom.preprocessing
-# import importlib
-# importlib.reload(toverboom)
-# importlib.reload(toverboom.lineageGraph)
-# importlib.reload(toverboom.preprocessing)
-# importlib.reload(toverboom.optimizeLayout)
+import importlib
+importlib.reload(toverboom)
+importlib.reload(toverboom.lineageGraph)
+importlib.reload(toverboom.preprocessing)
+importlib.reload(toverboom.optimizeLayout)
 
 
 def create_topfolder(directory):
@@ -193,13 +193,13 @@ def combine_images(output, combine_all= False):
 
 
 parser = argparse.ArgumentParser(description='Plot SNV on CNV tree. Provide path and select if all replicate should be plotted or only one')
-parser.add_argument('-r', '--replicate', default=None, type = str)
-parser.add_argument('-t', '--tree_graphs', required=True,  nargs='+') # list of trees in pickle format
-parser.add_argument('-s', '--raw_snv_matrix', required=True, type = str)
-parser.add_argument('-si', '--imputed_snv_matrix', required=True, type = str) # imputed snv matrix
-parser.add_argument('-cnv', '--cellCnv', required=True, type = str) # cnv mapping
-parser.add_argument('-o', '--output', required=True, type = str)  # output directory
-parser.add_argument('-co', '--combine_all', default = False, type = bool)  # output directory
+parser.add_argument('-r', '--replicate', help= "Do not give r if you want to compare all three replicate. Give 'APKS1','APKS2','APKS3' for a single replciate.", default=None, type = str)
+parser.add_argument('-t', '--tree_graphs', required=True,  help= "Give paths to tree graph, can be pass as a list of paths in correct order.", nargs='+') # list of trees in pickle format
+parser.add_argument('-s', '--raw_snv_matrix', required=True, type = str, help = "Path to raw snv matrix")
+parser.add_argument('-si', '--imputed_snv_matrix', required=True, type = str, help = "Path to imputed snv matrix") # imputed snv matrix
+parser.add_argument('-cnv', '--cellCnv', required=True, type = str, help = "Path to cnv mapping df") # cnv mapping
+parser.add_argument('-o', '--output', required=True, type = str, help = "Path to output folder (automatically create if not exist.")  # output directory
+parser.add_argument('-co', '--combine_all', default = False, type = bool, help= "boolean for creating combined ssnv plotting in a big plot (will take up big space. default = False.")  # output directory
 args = parser.parse_args()
 
 
@@ -231,8 +231,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-# ./data/APKS2_CNV_tree_33.pickle ./data/APKS3_CNV_tree_33.pickle
