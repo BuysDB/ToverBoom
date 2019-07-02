@@ -1,9 +1,21 @@
-import PIL
+import PIL.Image as Image
 import argparse
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import os
-
+import networkx as nx
+import sys
+sys.path.append('~/PycharmProjects/ToverBoom/')
+import toverboom
+import toverboom.lineageGraph
+import toverboom.optimizeLayout
+import toverboom.preprocessing
+import importlib
+importlib.reload(toverboom)
+importlib.reload(toverboom.lineageGraph)
+importlib.reload(toverboom.preprocessing)
+importlib.reload(toverboom.optimizeLayout)
 
 
 def create_topfolder(directory):
@@ -100,11 +112,12 @@ def plot_per_snv(lg, cellData):
     plt.savefig(f"./output/{replicate}/{replicate}_{column[0]}_{column[1]}.png", dpi=300)
 
 
-def per_replicate(replicate):
+def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellCnv):
     create_topfolder(f"./output/{replicate}")
 
     # Instantiate the lineage graph object
-    lg = toverboom.lineageGraph.LineageGraph(graph)
+    ## TODO: solve using package itself...
+    lg = toverboom.lineageGraph.LineageGraph(cnv_tree)
     # Create a figure for our plot:
     fig, ax = plt.subplots()
     # Find the best layout
@@ -129,8 +142,8 @@ def per_replicate(replicate):
     fig.canvas.draw()
 
     # combine imputed and raw snv matrix
-    imputed_visualize = gen_imputed_matrix_for_visualization(args.raw_snv_matrix, args.imputed_snv_matrix)
-    snvData = imputed_visualize.loc[args.replicate].loc[args.cellCnv.index]
+    imputed_visualize = gen_imputed_matrix_for_visualization(raw_snv_matrix, imputed_snv_matrix)
+    snvData = imputed_visualize.loc[replicate].loc[cellCnv.index]
     cellData = cellCnv.copy()
     cellData['tp'] = [passage for passage, plate, cell in list(cellData.index)]
     # plot snv on cnv tree per snv
@@ -139,12 +152,26 @@ def per_replicate(replicate):
         plot_per_snv(lg, cellData)
 
 
+def pillow_grid(images, max_horiz=np.iinfo(int).max):
+    n_images = len(images)
+    n_horiz = min(n_images, max_horiz)
+    h_sizes, v_sizes = [0] * n_horiz, [0] * ((n_images // n_horiz) + (1 if n_images % n_horiz > 0 else 0))
+    for i, im in enumerate(images):
+        h, v = i % n_horiz, i // n_horiz
+        h_sizes[h] = max(h_sizes[h], im.size[0])
+        v_sizes[v] = max(v_sizes[v], im.size[1])
+    h_sizes, v_sizes = np.cumsum([0] + h_sizes), np.cumsum([0] + v_sizes)
+    im_grid = Image.new('RGB', (h_sizes[-1], v_sizes[-1]), color='white')
+    for i, im in enumerate(images):
+        im_grid.paste(im, (h_sizes[i % n_horiz], v_sizes[i // n_horiz]))
+    return im_grid
+
+
 def combine_images(combine_all= False):
     # find all file with the same snv name replicate here doesn't matter.
-    replicate = 'APKS1'
     fullpiclist = []
 
-    for root, dirs, files in os.walk(f"./output/{replicate}/", topdown=True):
+    for root, dirs, files in os.walk(f"./output/APKS1/", topdown=True):
         for i, name in enumerate(files):
             piclist = []
             rep, snvname = name.split(sep='_', maxsplit=1)
@@ -157,7 +184,7 @@ def combine_images(combine_all= False):
                     im = Image.open(f"./output/{replicate}/{replicate}_{snvname}")
                     piclist.append(im)
                     fullpiclist.append(im)
-                    combined_image = pil_grid(piclist, 3)
+                    combined_image = pillow_grid(piclist, 3)
                     create_topfolder(f"./output/combined/")
                     combined_image.save(f"./output/combined/{snvname}")
 
@@ -179,18 +206,25 @@ parser.add_argument('-co', '--combine_all', default = False, type = bool)  # out
 args = parser.parse_args()
 
 
+
+
 def main():
-    print(args.tree_graphs)
+    raw_snv_matrix = pd.read_pickle(args.raw_snv_matrix)
+    imputed_snv_matrix = pd.read_pickle(args.imputed_snv_matrix)
+    cellCnv = pd.read_pickle(args.cellCnv)
+
+
     if args.replicate == None:
         replicates = ['APKS1', 'APKS2', 'APKS3']
-        for replicate in replicates:
-            per_replicate(replicate)
+        for i, replicate in enumerate(replicates):
+            cnv_tree_graph = nx.read_gpickle(args.tree_graphs[i])
+            per_replicate(replicate, cnv_tree_graph, raw_snv_matrix, imputed_snv_matrix, cellCnv)
 
         print("Generating comparison between replicates")
         combine_images(combine_all = args.combine_all)
 
     else:
-        main(args.replicate)
+        per_replicate(args.replicate)
         print(f"{args.replicate} figure generation finished!")
 
 
