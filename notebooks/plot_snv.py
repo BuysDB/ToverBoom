@@ -72,6 +72,7 @@ def construct_df_per_snv(cellData, snvData, column):
                           1: 'r', 0.55: '#ff7575'}.get(cluster, 'grey') for cluster in snvData[column]]
 
     # Assign markers
+    # Assign markers
     cellData['marker'] = [{0: 'o', 0.45: 'o', 1: 's', 0.55: 's'}.get(cluster, '.') for cluster in snvData[column]]
     cellData['size'] = [{0: 28, 0.45: 20,
                          1: 28, 0.55: 20}.get(cluster, 3) for cluster in snvData[column]]
@@ -84,16 +85,29 @@ def construct_df_per_snv(cellData, snvData, column):
 def plot_per_snv(lg, cellData, replicate, column, output):
     fig, ax = lg.getEmptyPlot()
     lg.plotPatches(ax, facecolor=(0.8, 0.8, 0.8, 1))
-    lg.plotSingleCells(cellData, ax=ax, fig=fig, plotPatches=False, enableShadow=True)
+    lg.plotSingleCells(cellData, cloneAttribute = "cluster", ax=ax, fig=fig, plotPatches=False, enableShadow=True)
+    # if imputed_cnv: cloneAttribute = "imputed_CNV_state"
 
     # Add labels to the clones:
-    lg.annotateNodes(ax, plotArgs={'size': 9},
+    allClones = set([ cluster for cluster,tp in lg.graph ]) - set([0])
+    bigClones = set([1,2,3,4,5])
+    lg.annotateNodes(ax,plotArgs={'size':10},
                      # Use the nodesToAnnotate argument to select which nodes to annotate
                      nodesToAnnotate=[
-                         (cluster, tp)
-                         for cluster, tp in lg.graph if cluster in [1, 4, 3, 5, 2, 8]],
-                     x_offset=5  # How much to move the labels to the right
-                     )
+                         (cluster,tp)
+                          for cluster,tp in lg.graph if cluster in bigClones],
+                     x_offset = 8 # How much to move the labels to the right
+                    )
+
+    lg.annotateNodes(ax,plotArgs={'size':7},
+                     # Use the nodesToAnnotate argument to select which nodes to annotate
+                     nodesToAnnotate=[
+                         (cluster,tp)
+                          for cluster,tp in lg.graph if cluster in allClones-bigClones],
+                     x_offset = 8 # How much to move the labels to the right
+                    )
+
+
 
     # Add vertical lines to indicate sampled timepoints
     lg.plot_vertical_lines(ax, cellData['tp'].unique(), c='black')
@@ -145,7 +159,7 @@ def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellC
     for column in snvData.loc[list(cellData.index)].columns:
         plotData = construct_df_per_snv(cellData, snvData, column)
         plot_per_snv(lg, plotData, replicate, column, output)
-        break
+        # break
 
 
 def pillow_grid(images, max_horiz=np.iinfo(int).max):
