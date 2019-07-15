@@ -33,14 +33,14 @@ def gen_imputed_matrix_for_visualization(raw_matrix, imputed_matrix, transparenc
     # 0. Reduce to the same matrix size
     try:
         raw_matrix = raw_matrix.loc[imputed_matrix.index]
-    except Exceptions:
-        print(Exceptions)
+    except Exception:
+        print(Exception)
 
 
     # 1. check if only include 0, 1. If -1: convert to np.nan
     raw_matrix[(raw_matrix == -1)] = np.nan
-    raw_matrix[(raw_matrix > 0.5)] = 1
-    raw_matrix[(raw_matrix < 0.5)] = 0
+    # raw_matrix[(raw_matrix > 0.5)] = 1
+    # raw_matrix[(raw_matrix < 0.5)] = 0
 
     # 2. enhance the transparency of the imputed values
     transparent_matrix = imputed_matrix.copy()
@@ -54,35 +54,38 @@ def gen_imputed_matrix_for_visualization(raw_matrix, imputed_matrix, transparenc
     return combined_matrix
 
 
-def test_visual():
-    raw = pd.DataFrame.from_dict({'col1': [0, np.nan, 0, np.nan], 'col2': [1, np.nan, np.nan, 1]})
-    imputed = pd.DataFrame.from_dict({'col1': [0.45, 0.45, 0.45, 0.45], 'col2': [0.55, 0.55, np.nan, 0.55]})
-    combined = pd.DataFrame.from_dict(
-        {'col1': {0: 0.0, 1: 0.45, 2: 0.0, 3: 0.45}, 'col2': {0: 1.0, 1: 0.55, 2: nan, 3: 1.0}})
+def construct_df_per_snv(cellData, column):
+    """
 
-    if combined == gen_imputed_matrix_for_visualization(raw, imputed):
-        pass
-    else:
-        raise "Error"
-    return None
+    :param cellData:
+    :param snvData:
+    :param column:
+    :return:
+    """
 
-
-def construct_df_per_snv(cellData, snvData, column):
+    # Assign color
     cellData['color'] = [{0: '#1d2bf7', 0.45: '#5b94ff',
-                          1: 'r', 0.55: '#ff7575'}.get(cluster, 'grey') for cluster in snvData[column]]
-
+                          1: 'r', 0.55: '#ff7575'}.get(cluster, 'grey') for cluster in cellData[column]]
     # Assign markers
-    # Assign markers
-    cellData['marker'] = [{0: 'o', 0.45: 'o', 1: 's', 0.55: 's'}.get(cluster, '.') for cluster in snvData[column]]
+    cellData['marker'] = [{0: 'o', 0.45: 'o', 1: 's', 0.55: 's'}.get(cluster, '.') for cluster in cellData[column]]
     cellData['size'] = [{0: 28, 0.45: 20,
-                         1: 28, 0.55: 20}.get(cluster, 3) for cluster in snvData[column]]
-    # drawing order
-    cellData['drawing order'] = [{1: 1, 0: 2, 0.55: 3, 0.45: 4}.get(cluster, 5) for cluster in snvData[column]]
-    cellData.sort_values(by='drawing order', ascending=False, inplace=True, na_position='last')
+                         1: 28, 0.55: 20}.get(cluster, 3) for cluster in cellData[column]]
+    # Assign order of plotting
+    cellData['z-order'] = [{1.0:8,0.0:8}.get(snvState,1) for snvState in cellData[column]]
+
     return cellData
 
 
 def plot_per_snv(lg, cellData, replicate, column, output):
+    """
+
+    :param lg:
+    :param cellData:
+    :param replicate: string, replicate name
+    :param column: snv name
+    :param output: output path
+    :return:
+    """
     fig, ax = lg.getEmptyPlot()
     lg.plotPatches(ax, facecolor=(0.8, 0.8, 0.8, 1))
     lg.plotSingleCells(cellData, cloneAttribute = "cluster", ax=ax, fig=fig, plotPatches=False, enableShadow=True)
@@ -90,7 +93,12 @@ def plot_per_snv(lg, cellData, replicate, column, output):
 
     # Add labels to the clones:
     allClones = set([ cluster for cluster,tp in lg.graph ]) - set([0])
-    bigClones = set([1,2,3,4,5])
+    bigClones = []
+    for node in lg.graph.nodes(data=True):
+        if node[1]['ratio'] > 0.2:
+            bigClones.append(node[0][0])
+    bigClones = set(bigClones)
+
     lg.annotateNodes(ax,plotArgs={'size':10},
                      # Use the nodesToAnnotate argument to select which nodes to annotate
                      nodesToAnnotate=[
@@ -123,13 +131,22 @@ def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellC
     create_topfolder(f"{output}/{replicate}")
     # Instantiate the lineage graph object
     lg = toverboom.lineageGraph.LineageGraph(cnv_tree)
+    if replicate == 'APKS1':
+        lg.trellisOrder = (12, 30, 8, 18, 1, 0, 4, 21, 5, 9, 2, 31, 3, 20, 26, 16)
+    elif replicate == 'APKS2':
+        lg.trellisOrder = (15, 6, 24, 29, 4, 10, 22, 17, 14, 33, 23, 18, 0, 32, 1, 27, 7, 28, 13, 8, 2)
+    elif replicate == 'APKS3':
+        lg.trellisOrder = (33,4, 12,18,27,1,17,11,14,24,29,8,0,10,13,9,25,2,31,26,19,3,15,6)
+    else:
+        lg.trellisOrder = None
     # Create a figure for our plot:
     fig, ax = plt.subplots()
+
     # Find the best layout
-    trellisOrder = toverboom.optimizeLayout.optimize_layout(lg,
+    toverboom.optimizeLayout.optimize_layout(lg,
                                              visualize_progress_ax=ax,
                                              visualize_progress_fig=fig,
-                                             initial_order=None)
+                                             initial_order=lg.trellisOrder)
     # Plot the polygons of the tree
     fig, ax = plt.subplots()
     # wavyness controls how wavy the segments of the tree are
@@ -154,12 +171,11 @@ def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellC
     cellData = cellCnv.loc[replicate]
     cellData['tp'] = [passage for passage, plate, cell in list(cellData.index)]
     # Overlapped df
-    snvData = snvData.loc[cellData.index]
+    cellData = cellData.join(snvData)
     # plot snv on cnv tree per snv
     for column in snvData.loc[list(cellData.index)].columns:
-        plotData = construct_df_per_snv(cellData, snvData, column)
+        plotData = construct_df_per_snv(cellData, column)
         plot_per_snv(lg, plotData, replicate, column, output)
-        # break
 
 
 def pillow_grid(images, max_horiz=np.iinfo(int).max):
@@ -205,21 +221,23 @@ def combine_images(output, combine_all= False):
 
 
 
-
-parser = argparse.ArgumentParser(description='Plot SNV on CNV tree. Provide path and select if all replicate should be plotted or only one')
-parser.add_argument('-r', '--replicate', help= "Do not give r if you want to compare all three replicate. Give 'APKS1','APKS2','APKS3' for a single replciate.", default=None, type = str)
-parser.add_argument('-t', '--tree_graphs', required=True,  help= "Give paths to tree graph, can be pass as a list of paths in correct order.", nargs='+') # list of trees in pickle format
-parser.add_argument('-s', '--raw_snv_matrix', required=True, type = str, help = "Path to raw snv matrix")
-parser.add_argument('-si', '--imputed_snv_matrix', required=True, type = str, help = "Path to imputed snv matrix") # imputed snv matrix
-parser.add_argument('-cnv', '--cellCnv', required=True, type = str, help = "Path to cnv mapping df") # cnv mapping
-parser.add_argument('-o', '--output', required=True, type = str, help = "Path to output folder (automatically create if not exist.")  # output directory
-parser.add_argument('-co', '--combine_all', default = False, type = bool, help= "boolean for creating combined ssnv plotting in a big plot (will take up big space. default = False.")  # output directory
-args = parser.parse_args()
+def form_arg():
+    parser = argparse.ArgumentParser(description='Plot SNV on CNV tree. Provide path and select if all replicate should be plotted or only one')
+    parser.add_argument('-r', '--replicate', help= "Do not give r if you want to compare all three replicate. Give 'APKS1','APKS2','APKS3' for a single replciate.", default=None, type = str)
+    parser.add_argument('-t', '--tree_graphs', required=True,  help= "Give paths to tree graph, can be pass as a list of paths in correct order.", nargs='+') # list of trees in pickle format
+    parser.add_argument('-s', '--raw_snv_matrix', required=True, type = str, help = "Path to raw snv matrix")
+    parser.add_argument('-si', '--imputed_snv_matrix', required=True, type = str, help = "Path to imputed snv matrix") # imputed snv matrix
+    parser.add_argument('-cnv', '--cellCnv', required=True, type = str, help = "Path to cnv mapping df") # cnv mapping
+    parser.add_argument('-o', '--output', required=True, type = str, help = "Path to output folder (automatically create if not exist.")  # output directory
+    parser.add_argument('-co', '--combine_all', default = False, type = bool, help= "boolean for creating combined ssnv plotting in a big plot (will take up big space. default = False.")  # output directory
+    args = parser.parse_args()
+    return args
 
 
 
 
 def main():
+    args = form_arg()
     imputed_snv_matrix = pd.read_pickle(args.imputed_snv_matrix)
     raw_snv_matrix = pd.read_pickle(args.raw_snv_matrix).loc[imputed_snv_matrix.index]
     cellCnv = pd.read_pickle(args.cellCnv)
