@@ -67,12 +67,10 @@ def construct_df_per_snv(cellData, column):
     :return: plotData is a matrix with added columns for plotting.
     """
     plotData = cellData.copy()
-    # Assign timepoint
-    plotData['tp'] = [passage for passage, plate, cell in list(plotData.index)]
 
     # Assign color
     plotData['color'] = [{0: '#1d2bf7', 0.45: '#5b94ff',
-                          1: 'r', 0.55: '#ff7575'}.get(cluster, 'grey') for cluster in plotData[column]]
+                          1: 'r', 0.55: '#ffabab'}.get(cluster, 'grey') for cluster in plotData[column]]
     # Assign markers
     plotData['marker'] = [{0: 'o', 0.45: 'o', 1: 's', 0.55: 's'}.get(cluster, '.') for cluster in plotData[column]]
     plotData['size'] = [{0: 50, 0.45: 35,
@@ -138,10 +136,15 @@ def plot_per_snv(lg, cellData, replicate, column, output):
     ax.set_xlabel('Time (weeks)')
     plt.title(f"{replicate} {column[0]}:{column[1]}")
     plt.savefig(f"{output}/{replicate}/{replicate}_{column[0]}_{column[1]}.png", dpi=300)
+    plt.savefig(f"{output}/{replicate}_svg/{replicate}_{column[0]}_{column[1]}.svg")
+
     plt.close(fig)
 
-def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellCnv, output):
+
+def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellCnv, output, testing = False):
     create_topfolder(f"{output}/{replicate}")
+    create_topfolder(f"{output}/{replicate}_svg")
+
     # Instantiate the lineage graph object
     lg = toverboom.lineageGraph.LineageGraph(cnv_tree)
     if replicate == 'APKS1':
@@ -184,11 +187,15 @@ def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellC
     cellData = cellCnv.loc[replicate]
     # Overlapped df
     cellData = cellData.join(snvData)
+    # Assign timepoint
+    cellData['tp'] = [passage for passage, plate, cell in list(cellData.index)]
     # plot snv on cnv tree per snv
-    for column in snvData.loc[list(cellData.index)].columns:
+    for i, column in enumerate(snvData.loc[list(cellData.index)].columns):
         plotData = construct_df_per_snv(cellData, column)
         plot_per_snv(lg, plotData, replicate, column, output)
-
+        if testing == True:
+            if i >= 2:
+                break
 
 def pillow_grid(images, max_horiz=np.iinfo(int).max):
     n_images = len(images)
@@ -242,6 +249,7 @@ def form_arg():
     parser.add_argument('-cnv', '--cellCnv', required=True, type = str, help = "Path to cnv mapping df") # cnv mapping
     parser.add_argument('-o', '--output', required=True, type = str, help = "Path to output folder (automatically create if not exist.")  # output directory
     parser.add_argument('-co', '--combine_all', default = False, type = bool, help= "boolean for creating combined ssnv plotting in a big plot (will take up big space. default = False.")  # output directory
+    parser.add_argument('-testing', '--testing', default = False, type = bool, help= "if testing == True, break after 3 snvs graph are formed. ")
     args = parser.parse_args()
     return args
 
@@ -259,7 +267,8 @@ def main():
         replicates = ['APKS1', 'APKS2', 'APKS3']
         for i, replicate in enumerate(replicates):
             cnv_tree_graph = nx.read_gpickle(args.tree_graphs[i])
-            per_replicate(replicate, cnv_tree_graph, raw_snv_matrix, imputed_snv_matrix, cellCnv, args.output)
+            per_replicate(replicate, cnv_tree_graph, raw_snv_matrix, imputed_snv_matrix, cellCnv, args.output,
+                          testing=args.testing)
 
         print("Generating comparison between replicates")
         combine_images(args.output, combine_all = args.combine_all)
@@ -267,7 +276,8 @@ def main():
     else:
         if len(args.tree_graphs) == 1:
             cnv_tree_graph = nx.read_gpickle(args.tree_graphs[0])
-            per_replicate(args.replicate, cnv_tree_graph, raw_snv_matrix, imputed_snv_matrix, cellCnv, args.output)
+            per_replicate(args.replicate, cnv_tree_graph, raw_snv_matrix, imputed_snv_matrix, cellCnv, args.output,
+                          testing=args.testing)
             print(f"{args.replicate} figure generation finished!")
         else:
             print("Error: -t received >1 tree graphs. Please modify the parameter.")
