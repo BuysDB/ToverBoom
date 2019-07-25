@@ -12,6 +12,11 @@ import toverboom.lineageGraph
 import toverboom.optimizeLayout
 import toverboom.preprocessing
 import importlib
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+# warnings.simplefilter(action='ignore', category=UserWarning)
+
+
 importlib.reload(toverboom)
 importlib.reload(toverboom.lineageGraph)
 importlib.reload(toverboom.preprocessing)
@@ -57,23 +62,30 @@ def gen_imputed_matrix_for_visualization(raw_matrix, imputed_matrix, transparenc
 def construct_df_per_snv(cellData, column):
     """
 
-    :param cellData:
-    :param snvData:
-    :param column:
-    :return:
+    :param cellData: cellCNV and snvData combined.
+    :param column: snv name as columns in input cellData matrix
+    :return: plotData is a matrix with added columns for plotting.
     """
+    plotData = cellData.copy()
+    # Assign timepoint
+    plotData['tp'] = [passage for passage, plate, cell in list(plotData.index)]
 
     # Assign color
-    cellData['color'] = [{0: '#1d2bf7', 0.45: '#5b94ff',
-                          1: 'r', 0.55: '#ff7575'}.get(cluster, 'grey') for cluster in cellData[column]]
+    plotData['color'] = [{0: '#1d2bf7', 0.45: '#5b94ff',
+                          1: 'r', 0.55: '#ff7575'}.get(cluster, 'grey') for cluster in plotData[column]]
     # Assign markers
-    cellData['marker'] = [{0: 'o', 0.45: 'o', 1: 's', 0.55: 's'}.get(cluster, '.') for cluster in cellData[column]]
-    cellData['size'] = [{0: 28, 0.45: 20,
-                         1: 28, 0.55: 20}.get(cluster, 3) for cluster in cellData[column]]
-    # Assign order of plotting
-    cellData['z-order'] = [{1.0:8,0.0:8}.get(snvState,1) for snvState in cellData[column]]
+    plotData['marker'] = [{0: 'o', 0.45: 'o', 1: 's', 0.55: 's'}.get(cluster, '.') for cluster in plotData[column]]
+    plotData['size'] = [{0: 50, 0.45: 35,
+                         1: 50, 0.55: 35}.get(cluster, 3) for cluster in plotData[column]]
 
-    return cellData
+    # Assign order of plotting
+    # cellData['z-order'] = [{1.0:8,0.0:8}.get(snvState,1) for snvState in cellData[column]]
+    plotData['z-order'] = [{1.0:8, 0.0:7, 0.55:6, 0.45:5}.get(snvState, 1) for snvState in plotData[column]]
+
+    # Assign edge_width
+    plotData['edge_width'] = [{1.0: 1, 0.0: 1, 0.55: 1, 0.45: 1}.get(snvState, 0) for snvState in plotData[column]]
+
+    return plotData
 
 
 def plot_per_snv(lg, cellData, replicate, column, output):
@@ -99,6 +111,7 @@ def plot_per_snv(lg, cellData, replicate, column, output):
             bigClones.append(node[0][0])
     bigClones = set(bigClones)
 
+    # plot CNV state number next to big clones
     lg.annotateNodes(ax,plotArgs={'size':10},
                      # Use the nodesToAnnotate argument to select which nodes to annotate
                      nodesToAnnotate=[
@@ -107,6 +120,7 @@ def plot_per_snv(lg, cellData, replicate, column, output):
                      x_offset = 8 # How much to move the labels to the right
                     )
 
+    # plot CNV state number next to other clones with smaller font.
     lg.annotateNodes(ax,plotArgs={'size':7},
                      # Use the nodesToAnnotate argument to select which nodes to annotate
                      nodesToAnnotate=[
@@ -119,7 +133,6 @@ def plot_per_snv(lg, cellData, replicate, column, output):
 
     # Add vertical lines to indicate sampled timepoints
     lg.plot_vertical_lines(ax, cellData['tp'].unique(), c='black')
-
     lg.plot_xticks(ax, cellData['tp'].unique())
 
     ax.set_xlabel('Time (weeks)')
@@ -169,7 +182,6 @@ def per_replicate(replicate, cnv_tree, raw_snv_matrix, imputed_snv_matrix, cellC
     snvData = snvData.loc[replicate]
     # start constructing plotting dataframe by copying cellCnv
     cellData = cellCnv.loc[replicate]
-    cellData['tp'] = [passage for passage, plate, cell in list(cellData.index)]
     # Overlapped df
     cellData = cellData.join(snvData)
     # plot snv on cnv tree per snv
