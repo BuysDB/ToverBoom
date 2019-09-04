@@ -866,8 +866,6 @@ class LineageGraph():
         ax.get_yaxis().set_visible(False)
         # This plots the internals of the curves
         self.plotEdges(ax, bezier=True,wavyness=wavyness,stepCount=30,plotArgs={'lw':0}, offsetCentroid=True)
-        self.annotateNodes(ax, plotArgs={'size':8}) # This draws the node labels
-
 
 
         fig.canvas.draw()
