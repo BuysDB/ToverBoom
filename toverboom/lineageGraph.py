@@ -963,24 +963,21 @@ class LineageGraph():
                     cellLabels=[]
                     cellsWithCurrentBarcode = cellsAtThisTimepointAndCluster[cellsAtThisTimepointAndCluster['barcode']==clone]
                     for cell,_ in cellsWithCurrentBarcode.iterrows():
-                        print(cell, clone)
+                        #print(cell, clone)
                         xForward = np.array([x for x,y in forward])
                         yForward = np.array([y for x,y in forward])
                         xReverse = np.array([x for x,y in reverse])
                         yReverse = np.array([y for x,y in reverse])
 
-                        x = np.random.uniform(
-                            low=np.nanmin(xForward)*(1+cellJitter),
-                            high=np.nanmax(xForward)*(1-cellJitter))
-
-                        high = np.nanmin((np.nanmax(xForward), (np.nanmean(xForward)+(cellJitter))))
-                        low = np.nanmin((np.nanmax(xForward), (np.nanmean(xForward)-(cellJitter))))
-
-
-                        x = np.random.uniform(
-                            low=low,
-                            high=high)
-
+                        isLeaf = (self.graph.out_degree(sink)==0)
+                        nx,ny = self.getNodeCoordinates()[sink]
+                        if isLeaf:
+                            low = -cellJitter*1.5
+                            high = 0
+                        else:
+                            low = -cellJitter
+                            high = cellJitter
+                        x = np.random.uniform(low=low,high=high) + nx
 
                         if True:
                             yMin = np.interp(x,xForward[np.isfinite(xForward)],yForward[np.isfinite(yForward)])
