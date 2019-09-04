@@ -822,8 +822,18 @@ class LineageGraph():
 
 
     def plot_stack(self, cellCnvBarcode, tf, ax, fig):
+        """
+        Plot stack of subclones on top of main clones
+        Args:
+            cellCnvBarcode(dict) : {cell_name : clone_id }
+            tf(pd.DataFrame) : dataframge containing abundance of subclones over time
+            ax : axis to plot onto
+            fig : handle to figure
+        Returns:
+            cloneColors (dict) : colors/markers assigned to every subclone
+        """
 
-        random.seed(4)
+        random.seed(3)
         graph=self.graph
         colorsList = list(plt.get_cmap('tab20').colors)
         markersList = 'os^<>'
@@ -999,6 +1009,7 @@ class LineageGraph():
 
 
         fig.canvas.draw()
+        return cloneColors
 
 
     def plot_stack_X(self,
