@@ -1195,7 +1195,12 @@ class LineageGraph():
             defaultLinewidth = 1,
             defaultEdgecolor = (1,1,1),
             defaultZorder=0,
-            zorderAttribute='z-order'
+            zorderAttribute='z-order',
+            xOffsetAttribute='x',
+            yOffsetAttribute='y',
+            defaultXOffset = 0,
+            defaultYOffset = None, # Value between 0 and 1
+            yJitterRatio = 1 # yJitter in respect to the size of the clone
             ):
         if ax is None:
             fig, ax = self.getEmptyPlot()
@@ -1231,8 +1236,32 @@ class LineageGraph():
                 else:
                     low = -cellJitter
                     high = cellJitter
-                cell_x = np.random.uniform(low=low,high=high) + nx
-                cell_y = np.random.uniform(low=-radius,high=radius) + ny
+
+                # Cell X offset:
+                try:
+                    x_offset = metaData[xOffsetAttribute]
+                except Exception as e:
+                    x_offset = defaultXOffset
+
+                if x_offset is not None:
+                    x_offset*=self.xDistance
+                else:
+                    x_offset=0
+
+                try:
+                    # y offset should be a value between 0 and 1
+                    y_offset = metaData[yOffsetAttribute]
+                except Exception as e:
+                    y_offset = defaultYOffset
+
+                if y_offset is not None:
+                    if y_offset<0 or y_offset>1:
+                        raise ValueError(f'{yOffsetAttribute} (y_offset) should be between 0 and 1')
+                    cell_y = -radius + radius*2*y_offset + ny
+                else:
+                    cell_y = np.random.uniform(low=-radius*yJitterRatio,high=radius*yJitterRatio) + ny
+
+                cell_x = np.random.uniform(low=low,high=high) + nx + x_offset
                 x.append(cell_x)
                 y.append(cell_y)
 
