@@ -2,6 +2,7 @@ import networkx as nx
 import pandas as pd
 import numpy as np
 import itertools
+import collections
 
 def cnvDistance(cnvStates, cnvStateA, cnvStateB ):
     """
@@ -19,9 +20,13 @@ def cnvDistance(cnvStates, cnvStateA, cnvStateB ):
         Integer value which points to a cluster id in cnvStates['cluster']
     """
 
-    a = cnvStates.loc[ cnvStates['cluster']==cnvStateA,:][['binIndex','chromosome', 'cluster','copyNumber','endCoordinate','startCoordinate']].set_index('binIndex')
-    b =  cnvStates.loc[ cnvStates['cluster']==cnvStateB,:][['binIndex','cluster','copyNumber']].set_index('binIndex')
-    merge = a.join(b, lsuffix='_A', rsuffix='_B')
+    a = cnvStates.loc[ cnvStates['cluster']==cnvStateA,:][['binIndex','chromosome', 'cluster','copyNumber','endCoordinate','startCoordinate']]
+    a.index = pd.MultiIndex.from_frame(a[['chromosome','binIndex']])
+    b = cnvStates.loc[ cnvStates['cluster']==cnvStateB,:][['binIndex','chromosome', 'cluster','copyNumber','endCoordinate','startCoordinate']]
+    b.index = pd.MultiIndex.from_frame(b[['chromosome','binIndex']])
+
+    merge = a.join(b,lsuffix='_A',rsuffix='_B')
+
     distancesPerChromosome = collections.Counter()
     for i,row in merge.iterrows():
         distance = row.copyNumber_B - row.copyNumber_A
@@ -29,7 +34,7 @@ def cnvDistance(cnvStates, cnvStateA, cnvStateB ):
         if row.copyNumber_B>0 and  row.copyNumber_A==0:
             return None,None
         if distance != 0:
-            distancesPerChromosome[(row.chromosome,distance)]+=1
+            distancesPerChromosome[(row.chromosome_A,distance)]+=1
 
     return len(distancesPerChromosome), distancesPerChromosome
 
@@ -76,7 +81,7 @@ def visualize_ancestry(G, target_dot_path=None, target_png_path=None):
 
     #nx.write_gpickle(G,f'{replicate}_cnv_distance.gpickle')
 
-    agraph = nx.drawing.nx_agraph.to_agraph(ancestry)
+    agraph = nx.drawing.nx_agraph.to_agraph(G)
     for i,(a,b) in enumerate(agraph.edges_iter()):
         for mindex in G[int(a)][int(b)]:
             if G[int(a)][int(b)][mindex]['dtype']=='ssnv':
