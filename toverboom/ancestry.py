@@ -98,3 +98,107 @@ def visualize_ancestry(G, target_dot_path=None, target_png_path=None):
         agraph.write(target_dot_path)
     if target_png_path is not None:
         agraph.draw(target_png_path)
+
+def visualize_distance_graph(ancestry, prefix):
+    """
+    visualize ancestry graph using pygraphviz
+    """
+
+    agraph = nx.drawing.nx_agraph.to_agraph(ancestry)
+    G = ancestry
+    for i,(a,b) in enumerate(agraph.edges_iter()):
+        for mindex in G[int(a)][int(b)]:
+
+            if G[int(a)][int(b)][mindex]['dtype']=='ssnv':
+                d = G[int(a)][int(b)][mindex]['distance']
+                agraph.get_edge( int(a), int(b)).attr['color'] = 'blue'
+                agraph.get_edge( int(a), int(b), mindex).attr['label'] = '%.2f' % d
+            elif G[int(a)][int(b)][mindex]['dtype']=='cnv':
+                d = G[int(a)][int(b)][mindex]['distance']
+                desc = G[int(a)][int(b)][mindex]['desc']
+                agraph.get_edge( int(a), int(b), mindex).attr['label'] = f'{desc}: {int(d)}'
+
+    agraph.layout(prog='dot')
+    agraph.write(f'{prefix}_cnv_distance.dot')
+    agraph.draw(f'{prefix}_cnv_distance.png')
+
+
+def time_expand(reducedGraph, replicate, replicateToStateCounter,timePunish=0.001):
+    
+    expandedGraph = nx.DiGraph()
+
+    allTimePoints = set([-5,0])
+    for node in reducedGraph:
+        timePoints = [
+            pas for (rep, pas), obs in replicateToStateCounter[node].items()
+            if rep==replicate or replicate=='ALL']
+        allTimePoints.update(set(timePoints))
+
+    allTimePoints = sorted(list(allTimePoints))
+    cnvToTimePointMapping = {}
+    cloneExtinction = {} # CNV -> time of extinction
+    for node in reducedGraph:
+        #Obtain timepoints for node at x
+        timePoints = [ pas for (rep, pas), obs in replicateToStateCounter[node].items() if rep==replicate or replicate=='ALL']
+        if node==0: # Prior
+            #inOtherReplicates=None
+            earliestTimepoint =-5
+            lastTimePoint=0
+        else:
+            inOtherReplicates = [ pas for (rep, pas), obs in replicateToStateCounter[node].items() if rep!=replicate and obs>1]
+            earliestTimepoint = min(timePoints)
+            lastTimePoint = max(timePoints)
+
+            if len(inOtherReplicates)>1 and createSharedTimepoint:
+                earliestTimepoint = 0 # Already present
+
+        cnvToTimePointMapping[node] =[timePoint for timePoint in allTimePoints
+            if timePoint>=earliestTimepoint and timePoint<=lastTimePoint]
+
+        if lastTimePoint<max(allTimePoints):
+            cloneExtinction[node] = lastTimePoint
+
+    for cnvState, timePoints in cnvToTimePointMapping.items():
+        prev = None # Previous cnv state and timepoint
+        for timePoint in timePoints:
+            current = (cnvState, timePoint)
+            expandedGraph.add_node( current )
+            if prev:
+                expandedGraph.add_edge(prev, current, distance=0)
+            prev = current
+
+        for tp in allTimePoints:
+            if (u,tp) in expandedGraph:
+                fromNode = (u,tp)
+                break
+        prevTimePoint = None
+        for tp in allTimePoints:
+            if (v,tp) in expandedGraph:
+                toNode = (v, tp)
+                break
+            prevTimePoint=tp
+
+        if (u, prevTimePoint) in expandedGraph:
+            fromNode = (u, prevTimePoint)
+
+    ## Add ancestry edges:
+    edgesToPut = reducedGraph.edges()
+    for copyStateA,copyStateB,d in reducedGraph.edges(data=True):
+
+
+        for fromNode in [ node for node in expandedGraph if node[0]==copyStateA  ]:
+            # To node should be the smallest timepoint
+            toNode = (copyStateB, min(cnvToTimePointMapping[copyStateB]))
+
+            # Fromnode needs to be earlier than to-node
+            if fromNode[1]<=toNode[1]:
+                 expandedGraph.add_edge(fromNode, toNode, desc=d.get('desc'), distance=d['distance'] - (timePunish*fromNode[1]) + 10*(fromNode[1]==toNode[1]))
+
+    for copyState, timePoint in expandedGraph:
+        if cloneExtinction.get(copyState, None)==timePoint:
+            expandedGraph.nodes[(copyState, timePoint)]['extinct'] = True
+        if max(cnvToTimePointMapping[copyState])==timePoint:
+            expandedGraph.nodes[(copyState, timePoint)]['leaf'] = True
+
+    return expandedGraph
+
