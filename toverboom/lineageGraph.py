@@ -153,7 +153,7 @@ class LineageGraph():
         radiusMultiplier = self.getRadiusMultiplier(kwargs.get('radiusMultiplier'))
         defaultRadius = self.getDefaultRadius(kwargs.get('defaultRadius'))
 
-        return max(minRadius, graph.node[node].get(radiusAttribute, defaultRadius)*radiusMultiplier )
+        return max(minRadius, graph.nodes[node].get(radiusAttribute, defaultRadius)*radiusMultiplier )
 
     """Obtain the two radii for an edge from source to sink"""
     def getEdgeRadii(self, source, sink, **kwargs):
@@ -674,7 +674,7 @@ class LineageGraph():
             for (lineage, timePoint) in graph:
                 y = trellisCoordinates[lineage]
                 x = timePoint*xDistance
-                radius = graph.node[(lineage, timePoint)].get(radiusAttribute, defaultRadius)*radiusMultiplier
+                radius = graph.nodes[(lineage, timePoint)].get(radiusAttribute, defaultRadius)*radiusMultiplier
                 ax.add_patch(plt.Circle((x, y), radius, color='r', alpha=0.5))
                 plt.plot((x,x),(y,y+radius), color='k' )
 
@@ -704,13 +704,13 @@ class LineageGraph():
     # Returns true if  node is a leaf
     def nodeIsLeaf(self, node, **kwargs):
         graph = self.getGraph(kwargs.get('graph'))
-        isLeaf = self.graph.node[node].get('leaf')
+        isLeaf = self.graph.nodes[node].get('leaf')
         return isLeaf
 
     # Returns True if the clone died out after this timepoint
     def nodeIsExtinct(self, node, **kwargs):
         graph = self.getGraph(kwargs.get('graph'))
-        isExtinct = self.graph.node[node].get('extinct')
+        isExtinct = self.graph.nodes[node].get('extinct')
         return isExtinct
 
     def annotateNodes(self, ax, x_offset=0.5, nodesToAnnotate=None, **kwargs):
