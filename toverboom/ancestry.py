@@ -202,3 +202,30 @@ def time_expand(reducedGraph, replicate, replicateToStateCounter,timePunish=0.00
 
     return expandedGraph
 
+
+def add_wildtype_state(df):
+    """
+    Add a wiltype state to the dataframe
+
+    For chromosomes with an "_" in the name the wt copy number is expected to be 1
+    2 otherwise
+
+    Args:
+        df (pd.Dataframe) Expected dataframe columns:
+        chromosome, binIndex,startCoordinate, endCoordinate, cluster, copyNumber
+
+    Returns:
+        DataFrame
+    """
+    zero_state = []
+    for (chromosome, binIndex,startCoordinate, endCoordinate ),group in df.groupby(['chromosome','binIndex','startCoordinate', 'endCoordinate']):
+
+        zero_state.append({'chromosome':chromosome,
+                           'binIndex':binIndex,
+                           'startCoordinate':startCoordinate,
+                           'endCoordinate':endCoordinate,
+                            'cluster':0,
+                           'copyNumber':2 if chromosome.count('_')==0 else 1
+                          })
+
+    return pd.concat( (df,pd.DataFrame(zero_state) ), sort=True)
