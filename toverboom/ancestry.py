@@ -123,8 +123,8 @@ def visualize_distance_graph(ancestry, prefix):
     agraph.draw(f'{prefix}_cnv_distance.png')
 
 
-def time_expand(reducedGraph, replicate, replicateToStateCounter,timePunish=0.001):
-    
+def time_expand(reducedGraph, replicate, replicateToStateCounter,createSharedTimepoint=False,timePunish=0.001,same_tp_punish=10):
+
     expandedGraph = nx.DiGraph()
 
     allTimePoints = set([-5,0])
@@ -167,11 +167,14 @@ def time_expand(reducedGraph, replicate, replicateToStateCounter,timePunish=0.00
                 expandedGraph.add_edge(prev, current, distance=0)
             prev = current
 
+        u = cnvState
+        v = cnvState
         for tp in allTimePoints:
             if (u,tp) in expandedGraph:
                 fromNode = (u,tp)
                 break
         prevTimePoint = None
+
         for tp in allTimePoints:
             if (v,tp) in expandedGraph:
                 toNode = (v, tp)
@@ -192,7 +195,7 @@ def time_expand(reducedGraph, replicate, replicateToStateCounter,timePunish=0.00
 
             # Fromnode needs to be earlier than to-node
             if fromNode[1]<=toNode[1]:
-                 expandedGraph.add_edge(fromNode, toNode, desc=d.get('desc'), distance=d['distance'] - (timePunish*fromNode[1]) + 10*(fromNode[1]==toNode[1]))
+                 expandedGraph.add_edge(fromNode, toNode, desc=d.get('desc'), distance=d['distance'] - (timePunish*fromNode[1]) + (same_tp_punish)*(fromNode[1]==toNode[1]))
 
     for copyState, timePoint in expandedGraph:
         if cloneExtinction.get(copyState, None)==timePoint:
