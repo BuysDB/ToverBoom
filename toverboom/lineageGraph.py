@@ -281,20 +281,17 @@ class LineageGraph():
             else:
                 ax.plot([x0,x1],[y0,y1],**plotArgs)
 
-    def getSegmentWidthControlPoints(self, r0,r1, source, sink, **kwargs):
+    def getSegmentWidthControlPoints(self, r0,r1, source, sink, wavyness, **kwargs):
         #@todo: this ignores the distance between the points!
         radiusAttribute= self.getRadiusAttribute(kwargs.get('radiusAttribute'))
         radiusMultiplier = self.getRadiusMultiplier(kwargs.get('radiusMultiplier'))
         defaultRadius = self.getDefaultRadius(kwargs.get('defaultRadius'))
         initRadius=self.getInitRadius(kwargs.get('initRadius'))
-        r0,r1 = self.getEdgeRadii(source, sink, **kwargs)
+        if r0 is None or r1 is None:
+            r0,r1 = self.getEdgeRadii(source, sink, **kwargs)
 
+        return [(0,r0),  (wavyness,r0), (1-wavyness, r1)  , (1,r1)]
 
-        return [
-                (r0,0),
-                (r0+(r1-r0)*(0.1),0),
-                (r0+(r1-r0)*(0.9),0)  ,
-                (r1,0) ]
 
     def getNodeConnectionCoordinate(self, source, sink,**kwargs):
 
@@ -347,7 +344,7 @@ class LineageGraph():
 
         # The width of the curve is described by a beziercurve too (single dimension cubic)
         if widthControlPoints is None:
-            widthControlPoints = self.getSegmentWidthControlPoints(r0,r1,source,sink,**kwargs)
+            widthControlPoints = self.getSegmentWidthControlPoints(r0,r1,source,sink,wavyness=wavyness,**kwargs)
 
         pathForward  =[]
         pathReverse = []
@@ -360,11 +357,13 @@ class LineageGraph():
 
         for bi,(bx,by) in enumerate(self.interpolateEdge(x0,y0, x1, y1,wavyness=wavyness,stepCount=stepCount)):
             t = (bi/(stepCount-1))
-            angle = interpolateBezierAngle(controlPoints,t )
-            currentWidth =  interpolateBezier(widthControlPoints,t=t)[0]  # r0 + (r1-r0)*t
+            angle = np.pi #interpolateBezierAngle(controlPoints,t )
+            currentWidth =  interpolateBezier(widthControlPoints,t=t)[1]
 
-            pathForward.append((bx+np.sin(angle)*currentWidth, by+np.cos(angle)*currentWidth))
-            pathReverse.append((bx-np.sin(angle)*currentWidth,by-np.cos(angle)*currentWidth))
+            ofs = np.pi
+            pathForward.append((bx+np.sin(angle-ofs)*currentWidth, by+np.cos(angle-ofs)*currentWidth))
+            pathReverse.append((bx - (np.sin(angle-ofs)*currentWidth), by- (np.cos(angle-ofs)*currentWidth)))
+
             #pathForward.append( f"{'M' if bi==0 else 'L'}{bx+np.sin(angle)*currentWidth} {by+np.cos(angle)*currentWidth}" )
             #pathReverse.append( f"L{bx-np.sin(angle)*currentWidth} {by-np.cos(angle)*currentWidth}")
 
@@ -412,9 +411,12 @@ class LineageGraph():
             timeRatio = (timePoint-timeStart)/(timeEnd-timeStart) # value between 0 and 1
             bx,by = interpolateBezier(t=timeRatio, points=controlPoints)
             angle = interpolateBezierAngle(controlPoints,timeRatio )
-            currentWidth =  interpolateBezier(widthControlPoints,t=timeRatio)[0]
-            pathForward.append((bx+np.sin(angle)*currentWidth, by+np.cos(angle)*currentWidth))
-            pathReverse.append((bx-np.sin(angle)*currentWidth,by-np.cos(angle)*currentWidth))
+            currentWidth =  interpolateBezier(widthControlPoints,t=timeRatio)[1]
+
+            ofs = np.pi
+
+            pathForward.append((bx+np.sin(angle-ofs)*currentWidth, by+np.cos(angle-ofs)*currentWidth))
+            pathReverse.append((bx - (np.sin(angle-ofs)*currentWidth), by- (np.cos(angle-ofs)*currentWidth)))
 
 
         return pathForward, pathReverse
