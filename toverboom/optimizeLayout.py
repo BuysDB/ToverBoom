@@ -21,7 +21,8 @@ def optimize_layout(
                         'initRadius':0.3
                         } ,
                         visualize_progress_fig = None,
-                        visualize_progress_ax = None
+                        visualize_progress_ax = None,
+                        no_optim=False
                     ):
     if visualize_progress_ax is not None and visualize_progress_ax is None:
         raise ValueError("Supply the figure")
@@ -50,6 +51,9 @@ def optimize_layout(
     best = trellisOrder
     curScore, intersectingClones = result
 
+    if no_optim:
+        lg.optimizeGraph( graph, trellisOrder=tuple(best), plot=plot, ax=ax, storeParams=True, **plotArgs)
+        return
 
     prevBest = None
     totalSwaps = 0
